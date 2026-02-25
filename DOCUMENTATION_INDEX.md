@@ -276,12 +276,152 @@ UI 更新
 
 ## 📅 更新履歴
 
-| 日付 | 内容 | 作成者 |
-|------|------|--------|
-| 2026-02-25 | 初稿（ARCHITECTURE, QUICK_REFERENCE, INDEX） | AI Copilot |
-| - | - | - |
+| 日付 | コミット | 内容 | 作成者 |
+|------|---------|------|--------|
+| 2026-02-25 | f70c779 | **UI刷新** - Qiita風レイアウト + MMA Wiki に合わせたサイドバー構成 | AI Copilot |
+| 2026-02-25 | b825661 | 初稿（ARCHITECTURE, QUICK_REFERENCE, INDEX） | AI Copilot |
 
 ---
+
+## 🔄 最新の変更内容 (2026-02-25)
+
+### サイドバー構成の重大改変
+
+**変更前**: 一次元配列のシンプルなページリスト
+```tsx
+const pages = [
+  { id: 1, title: 'Home', icon: '🏠' },
+  { id: 2, title: '部会議事録', icon: '📋' },
+  // ...
+];
+```
+
+**変更後**: カテゴリ別の階層構造
+```tsx
+const pageCategories = [
+  {
+    category: 'Projects',
+    items: [
+      { id: 1, title: 'Booklet', icon: '📖' },
+      { id: 2, title: 'ICPC', icon: '🏆' },
+      { id: 3, title: 'CTF', icon: '🚩' },
+      { id: 4, title: 'Kagisys', icon: '🔧' },
+    ],
+  },
+  {
+    category: 'Events',
+    items: [
+      { id: 5, title: 'Chofusai2025', icon: '🎉' },
+      { id: 6, title: 'Shinkan2025', icon: '🌸' },
+    ],
+  },
+  {
+    category: 'Members Only',
+    items: [
+      { id: 7, title: '電通大攻略Wiki', icon: '🎓' },
+      { id: 8, title: '新入生講習会', icon: '📚' },
+    ],
+  },
+  {
+    category: 'Resources',
+    items: [
+      { id: 9, title: 'KnowledgeBase', icon: '💡' },
+      { id: 10, title: 'Meeting', icon: '📋' },
+      { id: 11, title: 'InEmergency', icon: '🆘' },
+    ],
+  },
+];
+```
+
+### 具体的な変更箇所
+
+| 項目 | 変更前 | 変更後 | 理由 |
+|------|--------|--------|------|
+| **サイドバー幅** | `w-64` (256px) | `w-56` (224px) | カテゴリ増加に対応 |
+| **ページ構成** | 6ページ（フラット） | 11ページ（4カテゴリ） | MMA Wiki の実際の構成に合わせる |
+| **ヘッダー** | パディング `p-6` | `p-5` | スペース最適化 |
+| **カテゴリ見出し** | なし | `border-b border-gray-300` | 視認性向上 |
+| **ページリストのmargin** | `space-y-2` | `space-y-1` | コンパクト化 |
+| **新規ページボタン** | 中部に配置 | `border-t border-gray-300` で分離 | 視覚的階層化 |
+
+### トップバー (Qiita 風) への改善
+
+**変更前**: 保存/PDF/権限設定ボタンのみ
+```tsx
+<div className="flex items-center gap-3">
+  <button className="...bg-blue-600...">保存</button>
+  <button className="...bg-gray-200...">PDF出力</button>
+  <button className="...bg-gray-200...">権限設定</button>
+</div>
+```
+
+**変更後**: Qiita 風に「ログイン」ボタンとアバターを追加
+```tsx
+<div className="flex items-center gap-3">
+  {/* 既存ボタン群 */}
+  <button>保存</button>
+  <button>PDF出力</button>
+  <button>権限設定</button>
+
+  {/* 区切り線 */}
+  <div className="w-px h-6 bg-gray-300 mx-1"></div>
+
+  {/* 新: ログインボタン（緑色で目立つ） */}
+  <button className="...bg-green-600 hover:bg-green-700...">
+    <LogIn size={16} />
+    ログイン
+  </button>
+
+  {/* 新: ユーザーアバター（グラデーション青） */}
+  <button className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 text-white">
+    <User size={20} />
+  </button>
+</div>
+```
+
+### サイドバー フッターの削除
+
+**変更前**: サイドバー下部に「設定」「ログイン」ボタン
+```tsx
+<div className="p-4 border-t border-gray-200 space-y-2">
+  <button>設定</button>
+  <button className="...bg-blue-600...">ログイン</button>
+</div>
+```
+
+**変更後**: ❌ 削除（トップバーにログイン機能を統合）
+
+---
+
+## 📈 コード統計
+
+| メトリクス | 値 |
+|-----------|-----|
+| ファイル修正行数 | 82 insertions(+), 46 deletions(-) |
+| クロスオーバー点 | 行52（サイドバー構造）、行115-135（トップバー） |
+| 新規定数追加 | `pageCategories` 配列（4カテゴリ、11ページ） |
+| インポート追加 | `User` icon (lucide-react) |
+
+---
+
+## 🎯 影響範囲
+
+### 直接的に影響する部分
+- ✅ サイドバー`s rendering (28行 → 38行に増加)
+- ✅ トップバー右側 (従来 3ボタン → 6要素に拡張)
+
+### 間接的な影響
+- ⚡ ページボタンの onClick ハンドラ（`page.id` でマッピング可能に）
+- ⚡ 「アクティブページ」の判定ロジック（そのままで動作）
+
+### 後方互換性
+- ✅ エディタエリアのコード: **変更なし**
+- ✅ 状態管理（`useState`）: **変更なし**
+- ✅ スタイリング手法（Tailwind CSS）: **変更なし**
+
+---
+
+
 
 ## 🎓 学習リソース
 
