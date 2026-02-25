@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Menu, Settings, LogIn, Save, FileText, Lock, Plus, Trash2, ChevronDown } from 'lucide-react';
+import { Menu, Settings, LogIn, Save, FileText, Lock, Plus, User } from 'lucide-react';
 
 export default function Home() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -9,63 +9,85 @@ export default function Home() {
     '# 新歓部誌プロジェクト2025\n\n## 概要\nこれはMMA新歓部誌用のデモページです。\n\n## 特徴\n- Markdown対応\n- メディアアップロード機能\n- GUI権限管理\n\n---\n\nこの画面でMarkdownを編集できます。'
   );
 
-  const pages = [
-    { id: 1, title: 'Home', icon: '🏠' },
-    { id: 2, title: '部会議事録', icon: '📋' },
-    { id: 3, title: '技術資料', icon: '📚' },
-    { id: 4, title: 'イベント情報', icon: '📅' },
-    { id: 5, title: 'よくある質問', icon: '❓' },
-    { id: 6, title: 'メンバー紹介', icon: '👥' },
+  // カテゴリ構造のページデータ
+  const pageCategories = [
+    {
+      category: 'Projects',
+      items: [
+        { id: 1, title: 'Booklet', icon: '📖' },
+        { id: 2, title: 'ICPC', icon: '🏆' },
+        { id: 3, title: 'CTF', icon: '🚩' },
+        { id: 4, title: 'Kagisys', icon: '🔧' },
+      ],
+    },
+    {
+      category: 'Events',
+      items: [
+        { id: 5, title: 'Chofusai2025', icon: '🎉' },
+        { id: 6, title: 'Shinkan2025', icon: '🌸' },
+      ],
+    },
+    {
+      category: 'Members Only',
+      items: [
+        { id: 7, title: '電通大攻略Wiki', icon: '🎓' },
+        { id: 8, title: '新入生講習会', icon: '📚' },
+      ],
+    },
+    {
+      category: 'Resources',
+      items: [
+        { id: 9, title: 'KnowledgeBase', icon: '💡' },
+        { id: 10, title: 'Meeting', icon: '📋' },
+        { id: 11, title: 'InEmergency', icon: '🆘' },
+      ],
+    },
   ];
 
   return (
     <div className="flex h-screen bg-white">
       {/* サイドバー */}
-      <div className={`${sidebarOpen ? 'w-64' : 'w-0'} bg-gradient-to-b from-gray-50 to-gray-100 border-r border-gray-200 flex flex-col transition-all duration-300 overflow-hidden`}>
+      <div className={`${sidebarOpen ? 'w-56' : 'w-0'} bg-gradient-to-b from-gray-50 to-gray-100 border-r border-gray-200 flex flex-col transition-all duration-300 overflow-hidden`}>
         {/* ヘッダー */}
-        <div className="p-6 border-b border-gray-200">
-          <h1 className="text-xl font-bold text-gray-900">MMA Wiki</h1>
+        <div className="p-5 border-b border-gray-200">
+          <h1 className="text-lg font-bold text-gray-900">MMA Wiki</h1>
           <p className="text-xs text-gray-500 mt-1">電通大MMA部</p>
         </div>
 
-        {/* ページリスト */}
-        <div className="flex-1 overflow-y-auto p-4">
-          <div className="mb-4">
-            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3 px-2">Pages</p>
-            <div className="space-y-2">
-              {pages.map((page) => (
-                <button
-                  key={page.id}
-                  className={`w-full text-left px-3 py-2 rounded-lg transition-colors ${
-                    page.id === 1
-                      ? 'bg-blue-100 text-blue-900 font-medium'
-                      : 'text-gray-700 hover:bg-gray-200'
-                  }`}
-                >
-                  <span className="mr-2">{page.icon}</span>
-                  {page.title}
-                </button>
-              ))}
+        {/* カテゴリ別ページリスト */}
+        <div className="flex-1 overflow-y-auto p-3">
+          {pageCategories.map((categoryGroup, groupIdx) => (
+            <div key={groupIdx} className="mb-5">
+              {/* カテゴリ名 */}
+              <h3 className="text-xs font-semibold text-gray-600 uppercase tracking-wide pb-2 px-2 mb-2 border-b border-gray-300">
+                {categoryGroup.category}
+              </h3>
+              {/* 項目 */}
+              <div className="space-y-1">
+                {categoryGroup.items.map((page) => (
+                  <button
+                    key={page.id}
+                    className={`w-full text-left px-3 py-2 rounded-md transition-colors text-sm ${
+                      page.id === 1
+                        ? 'bg-blue-100 text-blue-900 font-medium'
+                        : 'text-gray-700 hover:bg-gray-200'
+                    }`}
+                  >
+                    <span className="mr-2">{page.icon}</span>
+                    {page.title}
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
+          ))}
 
           {/* 新規ページボタン */}
-          <button className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-gray-600 hover:bg-gray-200 transition-colors text-sm mb-6">
-            <Plus size={16} />
-            新規ページ
-          </button>
-        </div>
-
-        {/* フッター */}
-        <div className="p-4 border-t border-gray-200 space-y-2">
-          <button className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-gray-700 hover:bg-gray-200 transition-colors text-sm">
-            <Settings size={16} />
-            設定
-          </button>
-          <button className="w-full flex items-center gap-2 px-3 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors text-sm font-medium">
-            <LogIn size={16} />
-            ログイン
-          </button>
+          <div className="mt-6 pt-4 border-t border-gray-300">
+            <button className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-md text-gray-600 hover:bg-gray-200 transition-colors text-sm font-medium">
+              <Plus size={16} />
+              <span>新規</span>
+            </button>
+          </div>
         </div>
       </div>
 
@@ -94,6 +116,20 @@ export default function Home() {
             <button className="flex items-center gap-2 px-4 py-2 rounded-lg bg-gray-200 text-gray-900 hover:bg-gray-300 transition-colors font-medium text-sm">
               <Lock size={16} />
               権限設定
+            </button>
+
+            {/* 区切り線 */}
+            <div className="w-px h-6 bg-gray-300 mx-1"></div>
+
+            {/* ログインボタン */}
+            <button className="flex items-center gap-2 px-4 py-2 rounded-lg bg-green-600 text-white hover:bg-green-700 transition-colors font-medium text-sm">
+              <LogIn size={16} />
+              ログイン
+            </button>
+
+            {/* ユーザーアバター */}
+            <button className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 text-white flex items-center justify-center hover:shadow-md transition-shadow font-semibold">
+              <User size={20} />
             </button>
           </div>
         </div>
