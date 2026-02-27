@@ -198,6 +198,18 @@ UI 更新
 | **WIKI_ARCHITECTURE.md** | 400+ | 📍 **詳細ドキュメント** |
 | **QUICK_REFERENCE.md** | 300+ | 📍 **クイックリファレンス** |
 
+### 4️⃣ **SEPARATE_PAGES_REFRACTOR.md** (分割リファクタ記録)
+**目的**: `feature/separate-pages` ブランチで行ったリファクタリングの経緯と影響範囲を記録
+
+**含まれている内容**:
+- 共通レイアウト (`app/layout.tsx`) への移行
+- 編集ページ (`app/edit/page.tsx`) の分離
+- トップページ (`app/page.tsx`) を閲覧用に置換
+- クライアント／サーバーコンポーネントに関する注意点
+
+**参照ファイル**: [SEPARATE_PAGES_REFRACTOR.md](SEPARATE_PAGES_REFRACTOR.md)
+
+
 ---
 
 ## 🚀 次のステップ
