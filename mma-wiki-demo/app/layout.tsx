@@ -45,6 +45,9 @@ export default function RootLayout({
                 <Link href="/news" className="text-sm text-gray-700 hover:text-blue-600 transition-colors">
                   お知らせ
                 </Link>
+                <Link href="/blog" className="text-sm text-gray-700 hover:text-blue-600 transition-colors">
+                  ブログ
+                </Link>
                 <Link href="/activities" className="text-sm text-gray-700 hover:text-blue-600 transition-colors">
                   活動紹介
                 </Link>
