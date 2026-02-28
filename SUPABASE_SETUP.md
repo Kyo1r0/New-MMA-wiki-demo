@@ -10,6 +10,17 @@
 
 このドキュメントは、Supabaseプロジェクトの**最初の設定**と**テーブル作成**のステップをまとめています。フェーズ1の終了までに完了すべき内容です。
 
+### ✅ 2026-02-28 実施済み
+- Supabaseプロジェクト接続確認（`.env.local` 読み込みOK）
+- `profiles` / `pages` テーブルへの接続確認（`/debug` で `success: true`）
+- 初期スキーマSQLをリポジトリに追加
+  - `mma-wiki-demo/supabase/init_schema.sql`
+  - `mma-wiki-demo/supabase/verify_schema.sql`
+
+**運用ルール**:
+- 実際のキーは `.env.local` のみ（Git管理しない）
+- `.env.example` にはテンプレート値のみを記述
+
 ### 実施予定時期
 - **期間**: 2026年3月1日～3月7日
 - **推奨**: 最初の1週間で完了
@@ -80,6 +91,15 @@
 **補足**: Supabase Auth の built-in `auth.users` テーブルも使用します。
 
 ### 2.2 テーブル作成（SQL）
+
+#### 推奨（リポジトリ同梱SQLを実行）
+
+Supabase ダッシュボード → **SQL Editor** で、次の順で実行してください。
+
+1. `mma-wiki-demo/supabase/init_schema.sql`
+2. `mma-wiki-demo/supabase/verify_schema.sql`
+
+これにより、`profiles.role` と `pages.title` を含むフェーズ1の基本スキーマが再現できます。
 
 Supabase ダッシュボード → **SQL Editor** で以下を実行：
 

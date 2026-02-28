@@ -17,6 +17,9 @@ New-MMA-wiki-demo/
 │   │   └── globals.css
 │   ├── lib/
 │   │   └── supabase.ts          ← Supabaseクライアント初期化
+│   ├── supabase/
+│   │   ├── init_schema.sql      ← 初期スキーマ作成SQL
+│   │   └── verify_schema.sql    ← スキーマ検証SQL
 │   ├── public/
 │   ├── package.json
 │   ├── .env.example             ← 環境変数テンプレート
@@ -135,6 +138,8 @@ New-MMA-wiki-demo/
 **関連ファイル**:
 - `mma-wiki-demo/lib/supabase.ts` - Supabaseクライアント
 - `mma-wiki-demo/.env.example` - 環境変数テンプレート
+- `mma-wiki-demo/supabase/init_schema.sql` - 初期スキーマ作成
+- `mma-wiki-demo/supabase/verify_schema.sql` - スキーマ検証
 
 **読み応え**: 15-20分
 
