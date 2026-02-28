@@ -8,6 +8,7 @@ New-MMA-wiki-demo/
 ├── REQUIREMENTS.md              ← 📍 要件定義書（機能・非機能要件）
 ├── WIKI_ARCHITECTURE.md         ← 📍 詳細なコード構造分析
 ├── QUICK_REFERENCE.md           ← 📍 カスタマイズチートシート
+├── GITHUB_FLOW_GUIDE.md         ← 📍 ブランチ運用・開発ワークフロー
 ├── mma-wiki-demo/
 │   ├── app/
 │   │   ├── page.tsx             ← ★ メインUI（250行）
@@ -92,6 +93,26 @@ New-MMA-wiki-demo/
 - 優先度マトリクス
 
 **読み応え**: 15分
+
+---
+
+### 5️⃣ **GITHUB_FLOW_GUIDE.md** (開発ワークフロー)
+**目的**: GitHub Flowブランチ戦略の運用方法と開発プロセスを理解する  
+**読むべき人**: 開発メンバー全員・新入生・初めてこのプロジェクトに参加する人  
+
+**含まれている内容**:
+- GitHub Flow概要（main + feature ブランチモデル）
+- ブランチ命名規則（例: `feature/supabase-auth`）
+- ワークフロー（切って、開発して、PR作成、レビュー、マージ）
+- コミットメッセージのプリフィックス（feat, fix, docs, etc.）
+- PR テンプレートと説明方法
+- チェックリスト（開発前・中・後）
+- 競合の対応方法
+- フェーズ別の主要ブランチ計画
+- Tips & Best Practices
+- よくあるQ&A
+
+**読み応え**: 10分（初回）、その後は参照用
 
 ---
 
