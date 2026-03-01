@@ -168,7 +168,30 @@ for each row
 execute function public.set_updated_at();
 
 -- =====================================================
--- 4) フェーズ1用の最小確認クエリ
+-- 4) auth.users 追加時の profiles 自動初期化
+-- =====================================================
+create or replace function public.handle_new_user_profile()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  insert into public.profiles (id, role)
+  values (new.id, 'member')
+  on conflict (id) do nothing;
+  return new;
+end;
+$$;
+
+drop trigger if exists trg_auth_user_created_profile on auth.users;
+create trigger trg_auth_user_created_profile
+after insert on auth.users
+for each row
+execute function public.handle_new_user_profile();
+
+-- =====================================================
+-- 5) フェーズ1用の最小確認クエリ
 -- =====================================================
 -- select title, slug, is_published from public.pages order by created_at desc limit 5;
 -- select id, role from public.profiles limit 5;
