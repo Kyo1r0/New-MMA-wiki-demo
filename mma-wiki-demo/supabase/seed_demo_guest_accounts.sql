@@ -1,7 +1,7 @@
 -- デモ用アカウント（8文字以上パスワード）
 -- 実行場所: Supabase Dashboard > SQL Editor
 -- 注意: auth.users へのユーザー作成自体は Dashboard か Admin API で行うこと。
---       このSQLは「既存Authユーザーを guest ロール化」するためのもの。
+--       このSQLは「既存Authユーザーを member ロール化」するためのもの。
 
 -- 0) 旧スキーマ対策: profiles に必要カラムが無ければ追加
 alter table if exists public.profiles
@@ -22,7 +22,7 @@ with demo_accounts as (
 )
 select * from demo_accounts;
 
--- 2) auth.users に存在するものを profiles=guest として upsert
+-- 2) auth.users に存在するものを profiles=member として upsert
 with demo_accounts as (
   select *
   from (values
@@ -37,7 +37,7 @@ with demo_accounts as (
   join demo_accounts d on d.email = u.email
 )
 insert into public.profiles (id, role)
-select e.id, 'guest'
+select e.id, 'member'
 from existing_auth_users e
 on conflict (id) do update
 set role = excluded.role,

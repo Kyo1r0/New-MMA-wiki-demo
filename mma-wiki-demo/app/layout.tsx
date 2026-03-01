@@ -1,8 +1,9 @@
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import Link from "next/link";
-import { Search, Plus, Building2, CircleUserRound } from "lucide-react";
+import { Search, Plus, Building2, CircleUserRound, LogOut } from "lucide-react";
 import { createClient } from "@/utils/supabase/server";
+import { redirect } from "next/navigation";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -19,6 +20,14 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  async function handleSignOut() {
+    "use server";
+
+    const supabase = await createClient();
+    await supabase.auth.signOut();
+    redirect("/login");
+  }
+
   const supabase = await createClient();
   const {
     data: { user },
@@ -80,9 +89,26 @@ export default async function RootLayout({
                       新規作成
                     </Link>
 
-                    <button aria-label="ユーザーメニュー" className="p-2 rounded-md hover:bg-gray-100 transition-colors">
-                      <CircleUserRound size={20} className="text-gray-600" />
-                    </button>
+                    <details className="relative">
+                      <summary
+                        aria-label="ユーザーメニュー"
+                        className="list-none p-2 rounded-md hover:bg-gray-100 transition-colors cursor-pointer"
+                      >
+                        <CircleUserRound size={20} className="text-gray-600" />
+                      </summary>
+
+                      <div className="absolute right-0 mt-2 w-44 rounded-md border border-gray-200 bg-white shadow-sm p-1 z-50">
+                        <form action={handleSignOut}>
+                          <button
+                            type="submit"
+                            className="w-full inline-flex items-center gap-2 px-3 py-2 rounded-md text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                          >
+                            <LogOut size={14} />
+                            ログアウト
+                          </button>
+                        </form>
+                      </div>
+                    </details>
                   </>
                 )}
               </div>

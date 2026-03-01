@@ -11,6 +11,7 @@ New-MMA-wiki-demo/
 ├── GITHUB_FLOW_GUIDE.md         ← 📍 ブランチ運用・開発ワークフロー
 ├── SUPABASE_SETUP.md            ← 📍 Supabase初期設定ガイド
 ├── SESSION_COMPONENT_SWITCH_GUIDE.md ← 📍 Session連動UI設計ガイド
+├── DEV_SERVER_OPERATIONS.md     ← 📍 開発サーバー安全運用ガイド
 ├── mma-wiki-demo/
 │   ├── app/
 │   │   ├── page.tsx             ← ★ メインUI（250行）
@@ -162,6 +163,24 @@ New-MMA-wiki-demo/
 - `mma-wiki-demo/utils/supabase/server.ts`
 
 **読み応え**: 5-10分
+
+---
+
+### 8️⃣ **DEV_SERVER_OPERATIONS.md** (開発サーバー運用手順)
+**目的**: 開発サーバーの多重起動・lock残骸・ポート競合を防ぎ、安全に起動/停止する  
+**読むべき人**: 開発メンバー全員（特に初学者）  
+
+**含まれている内容**:
+- Windows PowerShellでの安全な起動手順
+- 通常停止（`Ctrl + C`）と強制停止の使い分け
+- `.next/dev/lock` の除去手順
+- よくあるエラー（`ENOENT`, lock競合）の対処
+
+**関連ファイル**:
+- `mma-wiki-demo/.next/dev/lock`（残骸時）
+- `mma-wiki-demo/package.json`
+
+**読み応え**: 5分
 
 ---
 
