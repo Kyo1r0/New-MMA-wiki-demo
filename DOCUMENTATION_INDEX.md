@@ -12,6 +12,7 @@ New-MMA-wiki-demo/
 ├── SUPABASE_SETUP.md            ← 📍 Supabase初期設定ガイド
 ├── SESSION_COMPONENT_SWITCH_GUIDE.md ← 📍 Session連動UI設計ガイド
 ├── DEV_SERVER_OPERATIONS.md     ← 📍 開発サーバー安全運用ガイド
+├── POST_TO_BLOG_MVP_PLAN.md     ← 📍 Markdown投稿機能のMVP計画
 ├── mma-wiki-demo/
 │   ├── app/
 │   │   ├── page.tsx             ← ★ メインUI（250行）
@@ -179,6 +180,25 @@ New-MMA-wiki-demo/
 **関連ファイル**:
 - `mma-wiki-demo/.next/dev/lock`（残骸時）
 - `mma-wiki-demo/package.json`
+
+**読み応え**: 5分
+
+---
+
+### 9️⃣ **POST_TO_BLOG_MVP_PLAN.md** (投稿機能MVP計画)
+**目的**: `/edit` でのMarkdown投稿を `/blog` 一覧へ反映する最小機能の実装計画を固定する  
+**読むべき人**: 投稿機能を実装する担当者・レビュー担当者  
+
+**含まれている内容**:
+- 決定済み仕様（投稿=即公開、slugユーザー入力、一覧まで）
+- 実装スコープと非スコープ
+- 変更候補ファイル（優先順）
+- 受け入れ条件（Doneの定義）
+
+**関連ファイル**:
+- `mma-wiki-demo/app/edit/page.tsx`
+- `mma-wiki-demo/app/blog/page.tsx`
+- `mma-wiki-demo/supabase/init_schema.sql`
 
 **読み応え**: 5分
 
