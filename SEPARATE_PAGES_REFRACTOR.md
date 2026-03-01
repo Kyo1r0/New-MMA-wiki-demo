@@ -1,5 +1,9 @@
 # Separate Pages リファクタリング記録
 
+> **注記（2026-03-01）**
+> この文書は `feature/separate-pages` 時点の履歴記録です。現在は認証・Session連動の都合で `layout.tsx` など一部実装が更新されています。
+> 最新状態は `README.md` / `SESSION_COMPONENT_SWITCH_GUIDE.md` を優先してください。
+
 ## 概要
 ブランチ: `feature/separate-pages`
 作業日: 2026-02-27

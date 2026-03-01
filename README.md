@@ -183,6 +183,10 @@ New-MMA-wiki-demo/
 
 ## � 更新履歴
 
+- 2026-03-01: `main` に投稿機能MVP計画ドキュメントを追加。
+  - `POST_TO_BLOG_MVP_PLAN.md` を新規追加
+  - `README.md` と `DOCUMENTATION_INDEX.md` から参照導線を追加
+
 - 2026-03-01: `feature/profile-auto-init` を継続更新。
   - `mma-wiki-demo/middleware.ts` を追加し、認証Sessionの同期を安定化
   - `mma-wiki-demo/utils/supabase/client.ts` を `@supabase/ssr` ベースに変更

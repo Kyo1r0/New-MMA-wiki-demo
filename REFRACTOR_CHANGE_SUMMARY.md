@@ -1,5 +1,9 @@
 # リファクタリング変更まとめ (Separate Pages)
 
+> **注記（2026-03-01）**
+> この文書は `feature/separate-pages` 実施時点の変更記録です。現行実装との差分がある場合は履歴情報として扱ってください。
+> 現行仕様は `README.md` と `DOCUMENTATION_INDEX.md` の最新リンク先を参照してください。
+
 作成日: 2026-02-27
 ブランチ: `feature/separate-pages`
 

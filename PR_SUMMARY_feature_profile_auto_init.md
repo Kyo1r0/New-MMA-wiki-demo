@@ -1,5 +1,8 @@
 # PR Summary: feature/profile-auto-init → main
 
+> **注記（2026-03-01）**
+> このPRサマリは履歴資料です。対象変更は `main` に反映済みです。
+
 ## 目的
 - Supabase認証を実アプリに接続し、Sessionに応じたUI出し分けを安定させる。
 - ログイン後導線として部内ポータル（ダミー）を用意する。

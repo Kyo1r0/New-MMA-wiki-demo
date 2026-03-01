@@ -1,5 +1,9 @@
 # 📖 MMA Wiki デモ - ドキュメント索引
 
+> **整合性メモ（2026-03-01）**
+> - 現行仕様の一次情報は `README.md` / `SUPABASE_SETUP.md` / `SESSION_COMPONENT_SWITCH_GUIDE.md` / `POST_TO_BLOG_MVP_PLAN.md`。
+> - `WIKI_ARCHITECTURE.md` / `QUICK_REFERENCE.md` / `SEPARATE_PAGES_REFRACTOR.md` / `REFRACTOR_CHANGE_SUMMARY.md` は履歴・学習用途の記述を含みます。
+
 ## 📁 プロジェクト構成
 
 ```
@@ -342,6 +346,7 @@ UI 更新
 ---
 
 ## 🕒 更新履歴
+- **2026-03-01**: `POST_TO_BLOG_MVP_PLAN.md` を追加し、MVP投稿機能計画の参照導線を整備。
 - **2026-03-01**: `SESSION_COMPONENT_SWITCH_GUIDE.md` を追加。Session連動UIの実装方針を整理。
 - **2026-03-01**: 認証実装（`app/login/page.tsx`, `app/layout.tsx`, `app/page.tsx`）に合わせて索引を更新。
 - **2026-02-27**: ドキュメント索引に `SEPARATE_PAGES_REFRACTOR.md` を追加（docs commit）。
