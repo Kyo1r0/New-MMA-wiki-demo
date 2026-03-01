@@ -9,13 +9,20 @@ New-MMA-wiki-demo/
 ├── WIKI_ARCHITECTURE.md         ← 📍 詳細なコード構造分析
 ├── QUICK_REFERENCE.md           ← 📍 カスタマイズチートシート
 ├── GITHUB_FLOW_GUIDE.md         ← 📍 ブランチ運用・開発ワークフロー
+├── SUPABASE_SETUP.md            ← 📍 Supabase初期設定ガイド
 ├── mma-wiki-demo/
 │   ├── app/
 │   │   ├── page.tsx             ← ★ メインUI（250行）
 │   │   ├── layout.tsx
 │   │   └── globals.css
+│   ├── lib/
+│   │   └── supabase.ts          ← Supabaseクライアント初期化
+│   ├── supabase/
+│   │   ├── init_schema.sql      ← 初期スキーマ作成SQL
+│   │   └── verify_schema.sql    ← スキーマ検証SQL
 │   ├── public/
 │   ├── package.json
+│   ├── .env.example             ← 環境変数テンプレート
 │   ├── tsconfig.json
 │   ├── tailwind.config.ts
 │   └── next.config.ts
@@ -113,6 +120,28 @@ New-MMA-wiki-demo/
 - よくあるQ&A
 
 **読み応え**: 10分（初回）、その後は参照用
+
+---
+
+### 6️⃣ **SUPABASE_SETUP.md** (Supabase初期設定)
+**目的**: Supabaseプロジェクトの初期構築とテーブル設計を理解する  
+**読むべき人**: バックエンド担当・Supabase設定を行う人・データベース設計を確認したい人  
+
+**含まれている内容**:
+- Supabaseプロジェクト作成ステップ（アカウント作成～プロジェクト初期化）
+- テーブル設計書（profiles, pages テーブル構造）
+- Row Level Security (RLS) ポリシー定義（読み取り/編集権限）
+- 環境変数設定方法（.env.local, .env.example）
+- Supabaseクライアント初期化（lib/supabase.ts ファイル内容）
+- 使用例とQ&A
+
+**関連ファイル**:
+- `mma-wiki-demo/lib/supabase.ts` - Supabaseクライアント
+- `mma-wiki-demo/.env.example` - 環境変数テンプレート
+- `mma-wiki-demo/supabase/init_schema.sql` - 初期スキーマ作成
+- `mma-wiki-demo/supabase/verify_schema.sql` - スキーマ検証
+
+**読み応え**: 15-20分
 
 ---
 
