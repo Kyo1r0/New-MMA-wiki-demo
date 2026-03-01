@@ -1,10 +1,8 @@
-"use client";
-
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { Search, Plus, LogIn } from "lucide-react";
+import { Search, Plus, Building2, CircleUserRound } from "lucide-react";
+import { createClient } from "@/utils/supabase/server";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -16,12 +14,16 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const pathname = usePathname();
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  const isLoggedIn = Boolean(user);
 
   return (
     <html lang="ja">
@@ -62,14 +64,27 @@ export default function RootLayout({
                   <Search size={18} className="text-gray-600" />
                 </button>
 
-                <Link href="/edit" className="inline-flex items-center gap-2 px-4 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700 transition-colors font-medium text-sm">
-                  <Plus size={14} />
-                  新規作成
-                </Link>
+                {!isLoggedIn ? (
+                  <Link href="/login" className="px-4 py-2 rounded-md border border-gray-200 text-sm text-gray-700 hover:bg-gray-100 transition-colors">
+                    ログイン
+                  </Link>
+                ) : (
+                  <>
+                    <Link href="/portal" className="inline-flex items-center gap-2 px-4 py-2 rounded-md border border-gray-200 text-sm text-gray-700 hover:bg-gray-100 transition-colors">
+                      <Building2 size={14} />
+                      部内ポータル
+                    </Link>
 
-                <Link href="/login" className="px-4 py-2 rounded-md border border-gray-200 text-sm text-gray-700 hover:bg-gray-100 transition-colors">
-                  ログイン
-                </Link>
+                    <Link href="/edit" className="inline-flex items-center gap-2 px-4 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700 transition-colors font-medium text-sm">
+                      <Plus size={14} />
+                      新規作成
+                    </Link>
+
+                    <button aria-label="ユーザーメニュー" className="p-2 rounded-md hover:bg-gray-100 transition-colors">
+                      <CircleUserRound size={20} className="text-gray-600" />
+                    </button>
+                  </>
+                )}
               </div>
             </div>
           </div>

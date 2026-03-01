@@ -10,6 +10,7 @@ New-MMA-wiki-demo/
 ├── QUICK_REFERENCE.md           ← 📍 カスタマイズチートシート
 ├── GITHUB_FLOW_GUIDE.md         ← 📍 ブランチ運用・開発ワークフロー
 ├── SUPABASE_SETUP.md            ← 📍 Supabase初期設定ガイド
+├── SESSION_COMPONENT_SWITCH_GUIDE.md ← 📍 Session連動UI設計ガイド
 ├── mma-wiki-demo/
 │   ├── app/
 │   │   ├── page.tsx             ← ★ メインUI（250行）
@@ -142,6 +143,25 @@ New-MMA-wiki-demo/
 - `mma-wiki-demo/supabase/verify_schema.sql` - スキーマ検証
 
 **読み応え**: 15-20分
+
+---
+
+### 7️⃣ **SESSION_COMPONENT_SWITCH_GUIDE.md** (Session出し分けガイド)
+**目的**: 同一ページ内で未ログイン/ログイン済みの部品を切り替える実装パターンを標準化する  
+**読むべき人**: フロントエンド担当・認証導線を実装する人  
+
+**含まれている内容**:
+- Server Component で Session を取得する基本パターン
+- `isLoggedIn` を使った条件レンダリング
+- `AuthGate` 共通化の次ステップ
+- ロール連動（guest/member/admin）への拡張方針
+
+**関連ファイル**:
+- `mma-wiki-demo/app/layout.tsx`
+- `mma-wiki-demo/app/page.tsx`
+- `mma-wiki-demo/utils/supabase/server.ts`
+
+**読み応え**: 5-10分
 
 ---
 
@@ -283,6 +303,8 @@ UI 更新
 ---
 
 ## 🕒 更新履歴
+- **2026-03-01**: `SESSION_COMPONENT_SWITCH_GUIDE.md` を追加。Session連動UIの実装方針を整理。
+- **2026-03-01**: 認証実装（`app/login/page.tsx`, `app/layout.tsx`, `app/page.tsx`）に合わせて索引を更新。
 - **2026-02-27**: ドキュメント索引に `SEPARATE_PAGES_REFRACTOR.md` を追加（docs commit）。
 - **2026-02-27**: 分割リファクタ記録ファイルを作成し、ページとレイアウトの変更点を記録。
 - **2026-02-25**: QUICK_REFERENCE.md, README.md に最初の詳細ドキュメントへのリンクと説明を追加。
@@ -303,6 +325,11 @@ UI 更新
 - 新しいプロジェクトを作成
 - テーブル設計を実装
 - 認証機能を追加
+
+### (3.5) Session連動UIの出し分け
+- `SESSION_COMPONENT_SWITCH_GUIDE.md` を読む
+- 同じページ内の `isLoggedIn` 分岐を先に作る
+- 認証必須ページは middleware で保護する
 
 ### (4) API 連携
 - fetch() または axios で Pages API を作成
