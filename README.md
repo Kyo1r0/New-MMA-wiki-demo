@@ -73,11 +73,21 @@ AIによるバイブコーディングと親和性が高く、新入生の学習
 - Supabase テーブル設計
 - よくあるエラー & 対処法
 
+### 4. **[SESSION_COMPONENT_SWITCH_GUIDE.md](./SESSION_COMPONENT_SWITCH_GUIDE.md)** 🔐 Session出し分けガイド
+同じページ内で、未ログイン/ログイン済みのUIを切り替える実装方針。
+- Server Component で Session を取得する方法
+- コンポーネントの出し分けパターン
+- 今後の `AuthGate` 共通化方針
+
+### 5. **[DEV_SERVER_OPERATIONS.md](./DEV_SERVER_OPERATIONS.md)** 🧰 開発サーバー運用手順
+多重起動で重くなる問題を避けるための、安全な起動/停止手順。
+- Windows向けの標準手順（起動・停止・再起動）
+- lock競合・ポート競合の対処
+- チーム運用チェックリスト
+
 ---
 
 ## 🚀 クイックスタート
-
-### 開発環境セットアップ
 ```bash
 cd mma-wiki-demo
 
@@ -127,9 +137,9 @@ New-MMA-wiki-demo/
 | 項目 | 状態 | 説明 |
 |------|------|---------|
 | **フロントエンド** | ✅ 完成 | Notion風UI、レスポンシブ対応済み |
-| **ドキュメント** | ✅ 完成 | 3つの詳細ドキュメント完備 |
+| **ドキュメント** | ✅ 拡充中 | 実装ガイド（認証・Session出し分け）まで整備 |
 | **バックエンド** | 🟡 基盤構築完了 | Supabase接続・スキーマSQL・検証SQLを整備 |
-| **認証機能** | ⏳ 次ブランチで実装 | `feature/user-auth` で実装開始予定 |
+| **認証機能** | ✅ 実装済み | ログイン/新規登録、レイアウトのセッション連動表示 |
 | **データベース** | ✅ フェーズ1基盤完了 | `profiles` / `pages` テーブル + RLSポリシー確認済み |
 
 ---
@@ -167,6 +177,20 @@ New-MMA-wiki-demo/
 ---
 
 ## � 更新履歴
+
+- 2026-03-01: `feature/profile-auto-init` を継続更新。
+  - `mma-wiki-demo/middleware.ts` を追加し、認証Sessionの同期を安定化
+  - `mma-wiki-demo/utils/supabase/client.ts` を `@supabase/ssr` ベースに変更
+  - `mma-wiki-demo/app/portal/page.tsx` と配下に部内ポータル（ダミーサービス）を追加
+  - `mma-wiki-demo/app/layout.tsx` の右上ユーザーメニューからログアウト可能に変更
+  - `DEV_SERVER_OPERATIONS.md` を追加（安全な起動/停止手順）
+
+- 2026-03-01: `feature/profile-auto-init` で認証導線と Session連動UI を実装。
+  - `mma-wiki-demo/app/login/page.tsx` を username/password デモ運用へ調整
+  - `mma-wiki-demo/app/layout.tsx` で未ログイン/ログイン済みヘッダーを出し分け
+  - `mma-wiki-demo/app/page.tsx` で同一ページ内の Session コンポーネント出し分けを実装
+  - `mma-wiki-demo/utils/supabase/server.ts` を追加（Server Component用クライアント）
+  - `mma-wiki-demo/supabase/seed_demo_guest_accounts.sql` を追加（memberロール付与用）
 
 - 2026-03-01: `feature/supabase-setup` で Supabase 初期構築を実施。
   - `mma-wiki-demo/supabase/init_schema.sql` を追加

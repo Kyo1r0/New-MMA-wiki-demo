@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Eye, EyeOff, Lock, Mail, User } from "lucide-react";
+import Link from "next/link";
+import { Eye, EyeOff, Lock, User } from "lucide-react";
 import { supabase } from "@/utils/supabase/client";
 
 type AuthMode = "login" | "signup";
@@ -12,8 +13,7 @@ export default function LoginPage() {
   const [authMode, setAuthMode] = useState<AuthMode>("login");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
@@ -28,21 +28,30 @@ export default function LoginPage() {
     setConfirmPasswordError("");
   };
 
+  const toDemoEmail = (value: string) => {
+    const trimmed = value.trim().toLowerCase();
+    if (trimmed.includes("@")) return trimmed;
+    return `${trimmed}@a.com`;
+  };
+
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setError("");
     setConfirmPasswordError("");
 
-    if (!email || !password) {
-      setError("メールアドレスとパスワードを入力してください。");
+    if (!username || !password) {
+      setError("ユーザー名とパスワードを入力してください。");
       return;
     }
 
+    if (!/^[a-zA-Z0-9._-]+$/.test(username.trim())) {
+      setError("ユーザー名は英数字・._- のみ使用できます。");
+      return;
+    }
+
+    const emailForAuth = toDemoEmail(username);
+
     if (!isLogin) {
-      if (!name.trim()) {
-        setError("表示名を入力してください。");
-        return;
-      }
       if (password !== confirmPassword) {
         setConfirmPasswordError("パスワードが一致しません。");
         return;
@@ -54,7 +63,7 @@ export default function LoginPage() {
     try {
       if (isLogin) {
         const { error: signInError } = await supabase.auth.signInWithPassword({
-          email,
+          email: emailForAuth,
           password,
         });
 
@@ -64,11 +73,11 @@ export default function LoginPage() {
         }
       } else {
         const { error: signUpError } = await supabase.auth.signUp({
-          email,
+          email: emailForAuth,
           password,
           options: {
             data: {
-              display_name: name,
+              display_name: username,
             },
           },
         });
@@ -136,42 +145,23 @@ export default function LoginPage() {
             </p>
           )}
 
-          {authMode === "signup" && (
-            <div>
-              <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1.5">
-                表示名
-              </label>
-              <div className="relative">
-                <User size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                <input
-                  id="name"
-                  type="text"
-                  value={name}
-                  onChange={(event) => setName(event.target.value)}
-                  placeholder="例: MMA 太郎"
-                  className="w-full h-11 rounded-lg border border-gray-300 pl-10 pr-3 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  disabled={isLoading}
-                />
-              </div>
-            </div>
-          )}
-
           <div>
-            <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1.5">
-              メールアドレス
+            <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-1.5">
+              ユーザー名
             </label>
             <div className="relative">
-              <Mail size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+              <User size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
               <input
-                id="email"
-                type="email"
-                value={email}
-                onChange={(event) => setEmail(event.target.value)}
-                placeholder="example@uec.ac.jp"
+                id="username"
+                type="text"
+                value={username}
+                onChange={(event) => setUsername(event.target.value)}
+                placeholder="例: a"
                 className="w-full h-11 rounded-lg border border-gray-300 pl-10 pr-3 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 disabled={isLoading}
               />
             </div>
+            <p className="mt-1.5 text-xs text-gray-500">デモ版では、ユーザー名を内部的に `@a.com` メールへ変換して認証します（例: `a` → `a@a.com`）。</p>
           </div>
 
           <div>
@@ -233,9 +223,9 @@ export default function LoginPage() {
 
           {isLogin && (
             <div className="flex items-center justify-end">
-              <button type="button" className="text-sm text-blue-600 hover:text-blue-700" disabled={isLoading}>
-                パスワードを忘れた場合
-              </button>
+              <Link href="/reset-password" className="text-sm text-blue-600 hover:text-blue-700">
+                パスワードをお忘れですか？
+              </Link>
             </div>
           )}
 

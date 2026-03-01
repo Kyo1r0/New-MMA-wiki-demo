@@ -2,7 +2,7 @@
 
 **プロジェクト**: MMA NextGen Wiki  
 **フェーズ**: 1（デモ＆基本機能版）  
-**更新日**: 2026年2月28日
+**更新日**: 2026年3月1日
 
 ---
 
@@ -16,6 +16,20 @@
 - 初期スキーマSQLをリポジトリに追加
   - `mma-wiki-demo/supabase/init_schema.sql`
   - `mma-wiki-demo/supabase/verify_schema.sql`
+
+### ✅ 2026-03-01 実施済み
+- ログイン/新規登録画面を Supabase Auth と接続
+  - `mma-wiki-demo/app/login/page.tsx`
+- Server Component で Session を取得して UI を出し分け
+  - `mma-wiki-demo/app/layout.tsx`
+  - `mma-wiki-demo/app/page.tsx`
+- デモアカウント用 SQL を追加
+  - `mma-wiki-demo/supabase/seed_demo_guest_accounts.sql`
+
+### デモ運用ルール（重要）
+- `seed_demo_guest_accounts.sql` は `auth.users` を新規作成しない。
+- 先に Supabase Dashboard（Authentication > Users）でユーザーを作成し、その後 seed SQL を実行する。
+- デモログインは `username -> username@a.com` へ内部変換して認証する。
 
 **運用ルール**:
 - 実際のキーは `.env.local` のみ（Git管理しない）

@@ -1,10 +1,9 @@
-"use client";
-
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { Search, Plus, LogIn } from "lucide-react";
+import { Search, Plus, Building2, CircleUserRound, LogOut } from "lucide-react";
+import { createClient } from "@/utils/supabase/server";
+import { redirect } from "next/navigation";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -16,12 +15,24 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const pathname = usePathname();
+  async function handleSignOut() {
+    "use server";
+
+    const supabase = await createClient();
+    await supabase.auth.signOut();
+    redirect("/login");
+  }
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  const isLoggedIn = Boolean(user);
 
   return (
     <html lang="ja">
@@ -62,14 +73,44 @@ export default function RootLayout({
                   <Search size={18} className="text-gray-600" />
                 </button>
 
-                <Link href="/edit" className="inline-flex items-center gap-2 px-4 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700 transition-colors font-medium text-sm">
-                  <Plus size={14} />
-                  新規作成
-                </Link>
+                {!isLoggedIn ? (
+                  <Link href="/login" className="px-4 py-2 rounded-md border border-gray-200 text-sm text-gray-700 hover:bg-gray-100 transition-colors">
+                    ログイン
+                  </Link>
+                ) : (
+                  <>
+                    <Link href="/portal" className="inline-flex items-center gap-2 px-4 py-2 rounded-md border border-gray-200 text-sm text-gray-700 hover:bg-gray-100 transition-colors">
+                      <Building2 size={14} />
+                      部内ポータル
+                    </Link>
 
-                <Link href="/login" className="px-4 py-2 rounded-md border border-gray-200 text-sm text-gray-700 hover:bg-gray-100 transition-colors">
-                  ログイン
-                </Link>
+                    <Link href="/edit" className="inline-flex items-center gap-2 px-4 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700 transition-colors font-medium text-sm">
+                      <Plus size={14} />
+                      新規作成
+                    </Link>
+
+                    <details className="relative">
+                      <summary
+                        aria-label="ユーザーメニュー"
+                        className="list-none p-2 rounded-md hover:bg-gray-100 transition-colors cursor-pointer"
+                      >
+                        <CircleUserRound size={20} className="text-gray-600" />
+                      </summary>
+
+                      <div className="absolute right-0 mt-2 w-44 rounded-md border border-gray-200 bg-white shadow-sm p-1 z-50">
+                        <form action={handleSignOut}>
+                          <button
+                            type="submit"
+                            className="w-full inline-flex items-center gap-2 px-3 py-2 rounded-md text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                          >
+                            <LogOut size={14} />
+                            ログアウト
+                          </button>
+                        </form>
+                      </div>
+                    </details>
+                  </>
+                )}
               </div>
             </div>
           </div>

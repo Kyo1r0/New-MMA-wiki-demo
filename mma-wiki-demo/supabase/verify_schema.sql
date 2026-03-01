@@ -33,6 +33,16 @@ where schemaname = 'public'
   and tablename in ('profiles', 'pages')
 order by tablename, policyname;
 
--- 5) アプリ側で使う最小クエリ（失敗しないこと）
+-- 5) 新規ユーザー作成時のprofiles自動生成トリガー確認
+select t.tgname as trigger_name, n.nspname as schema_name, c.relname as table_name
+from pg_trigger t
+join pg_class c on c.oid = t.tgrelid
+join pg_namespace n on n.oid = c.relnamespace
+where t.tgisinternal = false
+  and t.tgname = 'trg_auth_user_created_profile'
+  and n.nspname = 'auth'
+  and c.relname = 'users';
+
+-- 6) アプリ側で使う最小クエリ（失敗しないこと）
 select id, role from public.profiles limit 1;
 select id, title from public.pages limit 1;
