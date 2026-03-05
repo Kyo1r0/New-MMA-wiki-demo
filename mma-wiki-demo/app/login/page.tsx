@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Eye, EyeOff, Lock, User } from "lucide-react";
 import { supabase } from "@/utils/supabase/client";
@@ -10,6 +10,7 @@ type AuthMode = "login" | "signup";
 
 export default function LoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [authMode, setAuthMode] = useState<AuthMode>("login");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -19,6 +20,12 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [confirmPasswordError, setConfirmPasswordError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+
+  const nextPath = searchParams.get("next");
+  const redirectPath =
+    nextPath && nextPath.startsWith("/") && !nextPath.startsWith("//")
+      ? nextPath
+      : "/";
 
   const isLogin = authMode === "login";
 
@@ -88,7 +95,7 @@ export default function LoginPage() {
         }
       }
 
-      router.push("/");
+      router.push(redirectPath);
       router.refresh();
     } catch {
       setError("認証処理中にエラーが発生しました。時間をおいて再試行してください。");
