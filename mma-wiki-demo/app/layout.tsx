@@ -34,6 +34,18 @@ export default async function RootLayout({
   } = await supabase.auth.getUser();
   const isLoggedIn = Boolean(user);
 
+  let currentUserRole: 'guest' | 'member' | 'admin' | null = null;
+  if (user) {
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', user.id)
+      .maybeSingle();
+    currentUserRole = (profile?.role as 'guest' | 'member' | 'admin' | null) ?? null;
+  }
+
+  const isAdmin = currentUserRole === 'admin';
+
   return (
     <html lang="ja">
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased bg-gray-50`}>
@@ -69,6 +81,11 @@ export default async function RootLayout({
 
               {/* 右: 機能ボタン */}
               <div className="flex items-center gap-3">
+                {isAdmin && (
+                  <span className="inline-flex items-center rounded-full border border-rose-200 bg-rose-50 px-2.5 py-1 text-xs font-semibold text-rose-700">
+                    ADMIN
+                  </span>
+                )}
                 <button aria-label="検索" className="p-2 rounded-md hover:bg-gray-100 transition-colors">
                   <Search size={18} className="text-gray-600" />
                 </button>

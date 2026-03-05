@@ -3,10 +3,13 @@
 import { useState } from 'react';
 import { supabase } from '@/utils/supabase/client';
 
+type ReadAccessMode = 'all-members' | 'members';
 type WriteAccessMode = 'owner' | 'members' | 'all-members';
 
 type PermissionManagerProps = {
   pageId: string;
+  initialReadMode: ReadAccessMode;
+  initialMemberReaders: string[];
   initialWriteMode: WriteAccessMode;
   initialMemberEditors: string[];
   candidateUsers: Array<{
@@ -26,10 +29,16 @@ const formatCandidateLabel = (candidate: { id: string; role: 'member' | 'admin';
 
 export default function PermissionManager({
   pageId,
+  initialReadMode,
+  initialMemberReaders,
   initialWriteMode,
   initialMemberEditors,
   candidateUsers,
 }: PermissionManagerProps) {
+  const [readAccessMode, setReadAccessMode] = useState<ReadAccessMode>(initialReadMode);
+  const [memberReaders, setMemberReaders] = useState<string[]>(
+    initialMemberReaders.length > 0 ? initialMemberReaders : ['']
+  );
   const [writeAccessMode, setWriteAccessMode] = useState<WriteAccessMode>(initialWriteMode);
   const [memberEditors, setMemberEditors] = useState<string[]>(
     initialMemberEditors.length > 0 ? initialMemberEditors : ['']
@@ -39,6 +48,20 @@ export default function PermissionManager({
   const [success, setSuccess] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const datalistId = `permission-candidates-${pageId}`;
+
+  const addMemberReaderRow = () => {
+    setMemberReaders((previous) => [...previous, '']);
+  };
+
+  const removeMemberReaderRow = (index: number) => {
+    setMemberReaders((previous) => previous.filter((_, rowIndex) => rowIndex !== index));
+  };
+
+  const updateMemberReader = (index: number, value: string) => {
+    setMemberReaders((previous) =>
+      previous.map((memberId, rowIndex) => (rowIndex === index ? value : memberId))
+    );
+  };
 
   const addMemberEditorRow = () => {
     setMemberEditors((previous) => [...previous, '']);
@@ -54,8 +77,41 @@ export default function PermissionManager({
     );
   };
 
+  const normalizeMemberReaderIds = () =>
+    memberReaders.map((memberId) => memberId.trim()).filter((memberId) => memberId.length > 0);
+
   const normalizeMemberEditorIds = () =>
     memberEditors.map((memberId) => memberId.trim()).filter((memberId) => memberId.length > 0);
+
+  const validateUuidList = (memberIds: string[], label: string) => {
+    const invalidMemberId = memberIds.find((memberId) => !UUID_REGEX.test(memberId));
+    if (invalidMemberId) {
+      setError(`${label}のユーザーIDは UUID 形式で入力してください。`);
+      return false;
+    }
+
+    const loweredIds = memberIds.map((memberId) => memberId.toLowerCase());
+    const duplicatedId = loweredIds.find((id, index) => loweredIds.indexOf(id) !== index);
+    if (duplicatedId) {
+      setError(`${label}に同じユーザーIDが重複しています。1ユーザー1行にしてください。`);
+      return false;
+    }
+
+    return true;
+  };
+
+  const validateMemberReaders = (memberReaderIds: string[]) => {
+    if (readAccessMode !== 'members') {
+      return true;
+    }
+
+    if (memberReaderIds.length === 0) {
+      setError('「指定メンバーのみ閲覧可」を選んだ場合は、少なくとも1名を追加してください。');
+      return false;
+    }
+
+    return validateUuidList(memberReaderIds, '閲覧メンバー');
+  };
 
   const validateMemberEditors = (memberEditorIds: string[]) => {
     if (writeAccessMode !== 'members') {
@@ -63,31 +119,24 @@ export default function PermissionManager({
     }
 
     if (memberEditorIds.length === 0) {
-      setError('「指定メンバー」を選んだ場合は、少なくとも1名を追加してください。');
+      setError('「指定メンバーを追加」を選んだ場合は、少なくとも1名を追加してください。');
       return false;
     }
 
-    const invalidMemberId = memberEditorIds.find((memberId) => !UUID_REGEX.test(memberId));
-    if (invalidMemberId) {
-      setError('追加メンバーのユーザーIDは UUID 形式で入力してください。');
-      return false;
-    }
-
-    const loweredIds = memberEditorIds.map((memberId) => memberId.toLowerCase());
-    const duplicatedId = loweredIds.find((id, index) => loweredIds.indexOf(id) !== index);
-    if (duplicatedId) {
-      setError('同じユーザーIDが重複しています。1ユーザー1行にしてください。');
-      return false;
-    }
-
-    return true;
+    return validateUuidList(memberEditorIds, '編集メンバー');
   };
 
   const handleSave = async () => {
     setError('');
     setSuccess('');
 
+    const memberReaderIds = normalizeMemberReaderIds();
     const memberEditorIds = normalizeMemberEditorIds();
+
+    if (!validateMemberReaders(memberReaderIds)) {
+      return;
+    }
+
     if (!validateMemberEditors(memberEditorIds)) {
       return;
     }
@@ -106,40 +155,56 @@ export default function PermissionManager({
 
       const { error: updatePageError } = await supabase
         .from('pages')
-        .update({ internal_write_all: writeAccessMode === 'all-members' })
+        .update({
+          internal_read_all: readAccessMode === 'all-members',
+          internal_write_all: writeAccessMode === 'all-members',
+        })
         .eq('id', pageId);
 
       if (updatePageError) {
-        setError('編集範囲の更新に失敗しました。時間をおいて再試行してください。');
+        setError('公開範囲・編集範囲の更新に失敗しました。時間をおいて再試行してください。');
         return;
       }
 
       const { error: deleteError } = await supabase
         .from('page_permissions')
         .delete()
-        .eq('page_id', pageId)
-        .eq('can_write', true);
+        .eq('page_id', pageId);
 
       if (deleteError) {
-        setError('既存の追加メンバー権限の削除に失敗しました。');
+        setError('既存のメンバー権限の削除に失敗しました。');
         return;
       }
 
-      if (writeAccessMode === 'members' && memberEditorIds.length > 0) {
-        const rows = memberEditorIds.map((memberId) => ({
-          page_id: pageId,
-          user_id: memberId,
-          can_read: true,
-          can_write: true,
-          granted_by: user.id,
-        }));
+      const permissionsByUser = new Map<string, { can_read: boolean; can_write: boolean }>();
 
+      if (readAccessMode === 'members') {
+        memberReaderIds.forEach((memberId) => {
+          permissionsByUser.set(memberId, { can_read: true, can_write: false });
+        });
+      }
+
+      if (writeAccessMode === 'members') {
+        memberEditorIds.forEach((memberId) => {
+          permissionsByUser.set(memberId, { can_read: true, can_write: true });
+        });
+      }
+
+      const rows = Array.from(permissionsByUser.entries()).map(([memberId, permissions]) => ({
+        page_id: pageId,
+        user_id: memberId,
+        can_read: permissions.can_read,
+        can_write: permissions.can_write,
+        granted_by: user.id,
+      }));
+
+      if (rows.length > 0) {
         const { error: insertError } = await supabase
           .from('page_permissions')
           .upsert(rows, { onConflict: 'page_id,user_id' });
 
         if (insertError) {
-          setError('追加メンバー権限の保存に失敗しました。');
+          setError('メンバー権限の保存に失敗しました。');
           return;
         }
       }
@@ -153,10 +218,10 @@ export default function PermissionManager({
   };
 
   return (
-    <section className="mt-10 border border-gray-200 rounded-lg bg-gray-50 p-4 space-y-3">
+    <section className="mt-10 border border-gray-200 rounded-lg bg-gray-50 p-4 space-y-4">
       <div>
-        <h2 className="text-sm font-semibold text-gray-900">編集権限（write）</h2>
-        <p className="text-xs text-gray-600 mt-1">既定は「作成者のみ」。閲覧（read）は部内全員に許可されます。</p>
+        <h2 className="text-sm font-semibold text-gray-900">閲覧・編集権限</h2>
+        <p className="text-xs text-gray-600 mt-1">既定は閲覧: 部内全員 / 編集: 作成者のみです。</p>
       </div>
 
       {error && (
@@ -166,87 +231,165 @@ export default function PermissionManager({
         <p className="text-sm text-green-700 bg-green-50 border border-green-200 rounded-md px-3 py-2">{success}</p>
       )}
 
-      <div className="space-y-2 text-sm text-gray-700">
-        <label className="flex items-center gap-2">
-          <input
-            type="radio"
-            name="detail-write-access"
-            checked={writeAccessMode === 'owner'}
-            onChange={() => setWriteAccessMode('owner')}
-            disabled={isSaving}
-          />
-          作成者のみ（推奨）
-        </label>
-        <label className="flex items-center gap-2">
-          <input
-            type="radio"
-            name="detail-write-access"
-            checked={writeAccessMode === 'members'}
-            onChange={() => setWriteAccessMode('members')}
-            disabled={isSaving}
-          />
-          指定メンバーを追加
-        </label>
-        <label className="flex items-center gap-2">
-          <input
-            type="radio"
-            name="detail-write-access"
-            checked={writeAccessMode === 'all-members'}
-            onChange={() => setWriteAccessMode('all-members')}
-            disabled={isSaving}
-          />
-          部内全員を編集可（注意: 変更者が増えます）
-        </label>
-      </div>
+      <div className="border border-gray-200 rounded-lg bg-white p-3 space-y-2">
+        <h3 className="text-sm font-semibold text-gray-900">閲覧権限（read）</h3>
+        <div className="space-y-2 text-sm text-gray-700">
+          <label className="flex items-center gap-2">
+            <input
+              type="radio"
+              name="detail-read-access"
+              checked={readAccessMode === 'all-members'}
+              onChange={() => setReadAccessMode('all-members')}
+              disabled={isSaving}
+            />
+            部内全員が閲覧可（既定）
+          </label>
+          <label className="flex items-center gap-2">
+            <input
+              type="radio"
+              name="detail-read-access"
+              checked={readAccessMode === 'members'}
+              onChange={() => setReadAccessMode('members')}
+              disabled={isSaving}
+            />
+            指定メンバーのみ閲覧可
+          </label>
+        </div>
 
-      {writeAccessMode === 'members' && (
-        <div className="space-y-2">
-          {candidateUsers.length > 0 && (
-            <>
-              <datalist id={datalistId}>
-                {candidateUsers.map((candidate) => (
-                  <option key={candidate.id} value={candidate.id} label={formatCandidateLabel(candidate)} />
-                ))}
-              </datalist>
-              <p className="text-xs text-gray-500">候補ユーザーを入力補完できます（{candidateUsers.length}件）。</p>
-            </>
-          )}
+        {readAccessMode === 'members' && (
+          <div className="space-y-2">
+            {candidateUsers.length > 0 && (
+              <>
+                <datalist id={`${datalistId}-read`}>
+                  {candidateUsers.map((candidate) => (
+                    <option key={candidate.id} value={candidate.id} label={formatCandidateLabel(candidate)} />
+                  ))}
+                </datalist>
+                <p className="text-xs text-gray-500">候補ユーザーを入力補完できます（{candidateUsers.length}件）。</p>
+              </>
+            )}
 
-          {memberEditors.map((memberId, index) => (
-            <div key={`member-editor-${index}`} className="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-2 items-center">
-              <input
-                type="text"
-                value={memberId}
-                onChange={(event) => updateMemberEditor(index, event.target.value)}
-                placeholder="追加メンバーのユーザーID(UUID)"
-                list={datalistId}
-                className="h-10 rounded-md border border-gray-300 px-3 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                disabled={isSaving}
-              />
+            {memberReaders.map((memberId, index) => (
+              <div key={`member-reader-${index}`} className="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-2 items-center">
+                <input
+                  type="text"
+                  value={memberId}
+                  onChange={(event) => updateMemberReader(index, event.target.value)}
+                  placeholder="閲覧メンバーのユーザーID(UUID)"
+                  list={`${datalistId}-read`}
+                  className="h-10 rounded-md border border-gray-300 px-3 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  disabled={isSaving}
+                />
 
+                <button
+                  type="button"
+                  onClick={() => removeMemberReaderRow(index)}
+                  className="px-2 py-1 rounded-md border border-gray-300 text-xs text-gray-700 hover:bg-gray-100 transition-colors disabled:opacity-60"
+                  disabled={isSaving || memberReaders.length === 1}
+                >
+                  削除
+                </button>
+              </div>
+            ))}
+
+            <div className="flex justify-end">
               <button
                 type="button"
-                onClick={() => removeMemberEditorRow(index)}
-                className="px-2 py-1 rounded-md border border-gray-300 text-xs text-gray-700 hover:bg-gray-100 transition-colors disabled:opacity-60"
-                disabled={isSaving || memberEditors.length === 1}
+                onClick={addMemberReaderRow}
+                className="px-3 py-1.5 rounded-md border border-gray-300 text-xs text-gray-700 hover:bg-gray-100 transition-colors"
+                disabled={isSaving}
               >
-                削除
+                閲覧メンバーを追加
               </button>
             </div>
-          ))}
-
-          <div className="flex justify-end">
-            <button
-              type="button"
-              onClick={addMemberEditorRow}
-              className="px-3 py-1.5 rounded-md border border-gray-300 text-xs text-gray-700 hover:bg-gray-100 transition-colors"
-              disabled={isSaving}
-            >
-              メンバーを追加
-            </button>
           </div>
+        )}
+      </div>
+
+      <div className="border border-gray-200 rounded-lg bg-white p-3 space-y-2">
+        <h3 className="text-sm font-semibold text-gray-900">編集権限（write）</h3>
+        <div className="space-y-2 text-sm text-gray-700">
+          <label className="flex items-center gap-2">
+            <input
+              type="radio"
+              name="detail-write-access"
+              checked={writeAccessMode === 'owner'}
+              onChange={() => setWriteAccessMode('owner')}
+              disabled={isSaving}
+            />
+            作成者のみ（推奨）
+          </label>
+          <label className="flex items-center gap-2">
+            <input
+              type="radio"
+              name="detail-write-access"
+              checked={writeAccessMode === 'members'}
+              onChange={() => setWriteAccessMode('members')}
+              disabled={isSaving}
+            />
+            指定メンバーを追加
+          </label>
+          <label className="flex items-center gap-2">
+            <input
+              type="radio"
+              name="detail-write-access"
+              checked={writeAccessMode === 'all-members'}
+              onChange={() => setWriteAccessMode('all-members')}
+              disabled={isSaving}
+            />
+            部内全員を編集可（注意: 変更者が増えます）
+          </label>
         </div>
-      )}
+
+        {writeAccessMode === 'members' && (
+          <div className="space-y-2">
+            {candidateUsers.length > 0 && (
+              <>
+                <datalist id={datalistId}>
+                  {candidateUsers.map((candidate) => (
+                    <option key={candidate.id} value={candidate.id} label={formatCandidateLabel(candidate)} />
+                  ))}
+                </datalist>
+                <p className="text-xs text-gray-500">候補ユーザーを入力補完できます（{candidateUsers.length}件）。</p>
+              </>
+            )}
+
+            {memberEditors.map((memberId, index) => (
+              <div key={`member-editor-${index}`} className="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-2 items-center">
+                <input
+                  type="text"
+                  value={memberId}
+                  onChange={(event) => updateMemberEditor(index, event.target.value)}
+                  placeholder="編集メンバーのユーザーID(UUID)"
+                  list={datalistId}
+                  className="h-10 rounded-md border border-gray-300 px-3 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  disabled={isSaving}
+                />
+
+                <button
+                  type="button"
+                  onClick={() => removeMemberEditorRow(index)}
+                  className="px-2 py-1 rounded-md border border-gray-300 text-xs text-gray-700 hover:bg-gray-100 transition-colors disabled:opacity-60"
+                  disabled={isSaving || memberEditors.length === 1}
+                >
+                  削除
+                </button>
+              </div>
+            ))}
+
+            <div className="flex justify-end">
+              <button
+                type="button"
+                onClick={addMemberEditorRow}
+                className="px-3 py-1.5 rounded-md border border-gray-300 text-xs text-gray-700 hover:bg-gray-100 transition-colors"
+                disabled={isSaving}
+              >
+                編集メンバーを追加
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
 
       <div className="flex justify-end">
         <button

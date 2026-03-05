@@ -62,6 +62,7 @@ create table if not exists public.pages (
   content text not null default '',
   excerpt varchar(500),
   is_published boolean not null default false,
+  internal_read_all boolean not null default true,
   internal_write_all boolean not null default false,
   author_id uuid not null references auth.users(id) on delete cascade,
   created_at timestamptz not null default now(),
@@ -71,12 +72,16 @@ create table if not exists public.pages (
 );
 
 alter table public.pages
+  add column if not exists internal_read_all boolean not null default true;
+
+alter table public.pages
   add column if not exists internal_write_all boolean not null default false;
 
 comment on table public.pages is 'Wiki/ブログ記事テーブル';
 comment on column public.pages.title is '記事タイトル';
 comment on column public.pages.slug is 'URLスラッグ';
 comment on column public.pages.is_published is '公開状態';
+comment on column public.pages.internal_read_all is 'true の場合、member/admin は全員閲覧可';
 comment on column public.pages.internal_write_all is 'true の場合、member/admin は全員編集可';
 
 create index if not exists idx_pages_author_id on public.pages(author_id);
@@ -120,7 +125,7 @@ drop policy if exists page_permissions_insert_owner_or_admin on public.page_perm
 drop policy if exists page_permissions_update_owner_or_admin on public.page_permissions;
 drop policy if exists page_permissions_delete_owner_or_admin on public.page_permissions;
 
--- 部内メンバーは全記事を参照可（既定 read=部内）
+-- 閲覧可否: 著者 / admin / 指定メンバー / (internal_read_all=true かつ member/admin)
 create policy pages_select_published_or_own
 on public.pages
 for select
@@ -131,7 +136,7 @@ using (
     select 1
     from public.profiles p
     where p.id = auth.uid()
-      and p.role in ('member', 'admin')
+      and p.role = 'admin'
   )
   or exists (
     select 1
@@ -139,6 +144,13 @@ using (
     where pp.page_id = pages.id
       and pp.user_id = auth.uid()
       and pp.can_read = true
+  )
+  or exists (
+    select 1
+    from public.profiles p
+    where p.id = auth.uid()
+      and pages.internal_read_all = true
+      and p.role in ('member', 'admin')
   )
 );
 

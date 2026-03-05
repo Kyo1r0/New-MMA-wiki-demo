@@ -22,7 +22,7 @@ export default async function BlogDetailPage({ params }: BlogDetailPageProps) {
 
   const { data: post, error } = await supabase
     .from('pages')
-    .select('id, title, slug, content, created_at, author_id, internal_write_all')
+    .select('id, title, slug, content, created_at, author_id, internal_read_all, internal_write_all')
     .eq('slug', decodedSlug)
     .eq('is_published', true)
     .maybeSingle();
@@ -46,18 +46,26 @@ export default async function BlogDetailPage({ params }: BlogDetailPageProps) {
 
   const canManagePermissions = isAuthor || isAdmin;
 
+  let initialMemberReaders: string[] = [];
+  let initialReadMode: 'all-members' | 'members' = post.internal_read_all ? 'all-members' : 'members';
   let initialMemberEditors: string[] = [];
   let initialWriteMode: 'owner' | 'members' | 'all-members' = post.internal_write_all ? 'all-members' : 'owner';
   let candidateUsers: Array<{ id: string; role: 'member' | 'admin'; displayName: string | null }> = [];
   if (canManagePermissions) {
     const { data: permissionRows } = await supabase
       .from('page_permissions')
-      .select('user_id')
+      .select('user_id, can_read, can_write')
       .eq('page_id', post.id)
-      .eq('can_write', true)
       .order('created_at', { ascending: true });
 
-    initialMemberEditors = (permissionRows ?? []).map((permission) => permission.user_id);
+    initialMemberReaders = (permissionRows ?? [])
+      .filter((permission) => permission.can_read)
+      .map((permission) => permission.user_id);
+
+    initialMemberEditors = (permissionRows ?? [])
+      .filter((permission) => permission.can_write)
+      .map((permission) => permission.user_id);
+
     if (!post.internal_write_all && initialMemberEditors.length > 0) {
       initialWriteMode = 'members';
     }
@@ -96,6 +104,8 @@ export default async function BlogDetailPage({ params }: BlogDetailPageProps) {
       {canManagePermissions && (
         <PermissionManager
           pageId={post.id}
+          initialReadMode={initialReadMode}
+          initialMemberReaders={initialMemberReaders}
           initialWriteMode={initialWriteMode}
           initialMemberEditors={initialMemberEditors}
           candidateUsers={candidateUsers}
