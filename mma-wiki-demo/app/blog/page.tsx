@@ -7,47 +7,38 @@ export default async function BlogPage() {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user) {
-    return (
-      <div className="p-8">
-        <h1 className="text-3xl font-bold text-gray-900">ブログ</h1>
-        <p className="mt-3 text-sm text-gray-600">このページは部内向けです。ログインして閲覧してください。</p>
-        <div className="mt-6">
-          <Link
-            href="/login?next=/blog"
-            className="inline-flex items-center rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
-          >
-            ログインする
-          </Link>
-        </div>
-      </div>
-    );
+  let role: 'guest' | 'member' | 'admin' | null = null;
+  if (user) {
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', user.id)
+      .maybeSingle();
+    role = (profile?.role as 'guest' | 'member' | 'admin' | null) ?? null;
   }
 
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('role')
-    .eq('id', user.id)
-    .maybeSingle();
-
-  const role = profile?.role;
   const isAdmin = role === 'admin';
-  const canViewInternal = role === 'member' || role === 'admin';
 
-  if (!canViewInternal) {
-    return (
-      <div className="p-8">
-        <h1 className="text-3xl font-bold text-gray-900">ブログ</h1>
-        <p className="mt-3 text-sm text-gray-600">現在の権限では閲覧できません。管理者に member 権限の付与を依頼してください。</p>
-      </div>
-    );
-  }
-
-  const { data: posts, error } = await supabase
+  const primaryResult = await supabase
     .from('pages')
-    .select('id, title, slug, excerpt, content, created_at')
+    .select('id, title, slug, excerpt, content, created_at, is_public')
     .eq('is_published', true)
     .order('created_at', { ascending: false });
+
+  let posts = primaryResult.data;
+  let error = primaryResult.error;
+
+  const missingIsPublicColumn = !!error && (error.message.includes('is_public') || error.message.includes('column'));
+  if (missingIsPublicColumn) {
+    const fallbackResult = await supabase
+      .from('pages')
+      .select('id, title, slug, excerpt, content, created_at')
+      .eq('is_published', true)
+      .order('created_at', { ascending: false });
+
+    posts = fallbackResult.data?.map((post) => ({ ...post, is_public: false }));
+    error = fallbackResult.error;
+  }
 
   const errorMessage = error?.message ?? '';
   const isPolicyRecursionError = errorMessage.includes('infinite recursion detected in policy');
@@ -67,7 +58,11 @@ export default async function BlogPage() {
           </span>
         )}
       </div>
-      <p className="mt-3 text-sm text-gray-600">公開記事（即公開）を新着順で表示しています。</p>
+      <p className="mt-3 text-sm text-gray-600">公開記事を新着順で表示しています（全体公開/部内限定を含む）。</p>
+
+      {!user && (
+        <p className="mt-2 text-xs text-gray-500">未ログインでは「全体公開」の記事のみ表示されます。</p>
+      )}
 
       {error && (
         <div className="mt-6 text-sm text-red-700 bg-red-50 border border-red-200 rounded-lg px-4 py-3 space-y-2">
@@ -105,7 +100,12 @@ export default async function BlogPage() {
                   </h2>
                   <span className="text-xs text-gray-500 whitespace-nowrap">{publishedAt}</span>
                 </div>
-                <p className="mt-2 text-sm text-gray-500">slug: {post.slug}</p>
+                <div className="mt-2 flex items-center gap-2">
+                  <p className="text-sm text-gray-500">slug: {post.slug}</p>
+                  <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${post.is_public ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>
+                    {post.is_public ? '全体公開' : '部内限定'}
+                  </span>
+                </div>
                 <p className="mt-3 text-sm text-gray-700 leading-relaxed whitespace-pre-wrap line-clamp-3">
                   {excerpt || '本文なし'}
                 </p>

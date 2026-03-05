@@ -20,12 +20,47 @@ export default async function BlogDetailPage({ params }: BlogDetailPageProps) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const { data: post, error } = await supabase
+  const primaryResult = await supabase
     .from('pages')
-    .select('id, title, slug, content, created_at, author_id, internal_read_all, internal_write_all')
+    .select('id, title, slug, content, created_at, author_id, is_public, internal_read_all, internal_write_all')
     .eq('slug', decodedSlug)
     .eq('is_published', true)
     .maybeSingle();
+
+  let post:
+    | {
+        id: string;
+        title: string;
+        slug: string;
+        content: string | null;
+        created_at: string;
+        author_id: string;
+        is_public?: boolean | null;
+        internal_read_all?: boolean | null;
+        internal_write_all?: boolean | null;
+      }
+    | null = primaryResult.data;
+  let error = primaryResult.error;
+
+  const schemaDriftError =
+    !!error &&
+    (error.message.includes('is_public') ||
+      error.message.includes('internal_read_all') ||
+      error.message.includes('internal_write_all') ||
+      error.message.includes('column') ||
+      error.message.includes('schema cache'));
+
+  if (schemaDriftError) {
+    const fallbackResult = await supabase
+      .from('pages')
+      .select('id, title, slug, content, created_at, author_id')
+      .eq('slug', decodedSlug)
+      .eq('is_published', true)
+      .maybeSingle();
+
+    post = fallbackResult.data;
+    error = fallbackResult.error;
+  }
 
   if (error || !post) {
     notFound();
@@ -46,10 +81,26 @@ export default async function BlogDetailPage({ params }: BlogDetailPageProps) {
 
   const canManagePermissions = isAuthor || isAdmin;
 
+  const isPublic = 'is_public' in post ? Boolean(post.is_public) : false;
+  const internalReadAll = 'internal_read_all' in post ? Boolean(post.internal_read_all) : true;
+  const internalWriteAll = 'internal_write_all' in post ? Boolean(post.internal_write_all) : false;
+
+  let canEditPost = isAuthor || isAdmin || internalWriteAll;
+  if (!canEditPost && user) {
+    const { data: editPermission } = await supabase
+      .from('page_permissions')
+      .select('can_write')
+      .eq('page_id', post.id)
+      .eq('user_id', user.id)
+      .eq('can_write', true)
+      .maybeSingle();
+    canEditPost = Boolean(editPermission?.can_write);
+  }
+
   let initialMemberReaders: string[] = [];
-  let initialReadMode: 'all-members' | 'members' = post.internal_read_all ? 'all-members' : 'members';
+  const initialReadMode: 'public' | 'all-members' | 'members' = isPublic ? 'public' : (internalReadAll ? 'all-members' : 'members');
   let initialMemberEditors: string[] = [];
-  let initialWriteMode: 'owner' | 'members' | 'all-members' = post.internal_write_all ? 'all-members' : 'owner';
+  let initialWriteMode: 'owner' | 'members' | 'all-members' = internalWriteAll ? 'all-members' : 'owner';
   let candidateUsers: Array<{ id: string; role: 'member' | 'admin'; displayName: string | null }> = [];
   if (canManagePermissions) {
     const { data: permissionRows } = await supabase
@@ -66,7 +117,7 @@ export default async function BlogDetailPage({ params }: BlogDetailPageProps) {
       .filter((permission) => permission.can_write)
       .map((permission) => permission.user_id);
 
-    if (!post.internal_write_all && initialMemberEditors.length > 0) {
+    if (!internalWriteAll && initialMemberEditors.length > 0) {
       initialWriteMode = 'members';
     }
 
@@ -91,7 +142,17 @@ export default async function BlogDetailPage({ params }: BlogDetailPageProps) {
         <Link href="/blog" className="text-sm text-blue-600 hover:text-blue-700">
           ← ブログ一覧へ戻る
         </Link>
-        <span className="text-xs text-gray-500">公開日: {publishedAt}</span>
+        <div className="flex items-center gap-3">
+          {canEditPost && (
+            <Link
+              href={`/edit?slug=${encodeURIComponent(post.slug)}`}
+              className="text-sm text-blue-600 hover:text-blue-700"
+            >
+              編修する
+            </Link>
+          )}
+          <span className="text-xs text-gray-500">公開日: {publishedAt}</span>
+        </div>
       </div>
 
       <h1 className="mt-4 text-2xl md:text-3xl font-bold text-gray-900">{post.title}</h1>

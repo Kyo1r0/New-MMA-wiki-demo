@@ -17,7 +17,7 @@ where table_schema = 'public'
     or
     (table_name = 'profiles' and column_name in ('display_name'))
     or
-    (table_name = 'pages' and column_name in ('id', 'title', 'slug', 'content', 'excerpt', 'is_published', 'internal_read_all', 'internal_write_all', 'author_id', 'created_at', 'updated_at'))
+    (table_name = 'pages' and column_name in ('id', 'title', 'slug', 'content', 'excerpt', 'is_published', 'is_public', 'internal_read_all', 'internal_write_all', 'author_id', 'created_at', 'updated_at'))
     or
     (table_name = 'page_permissions' and column_name in ('id', 'page_id', 'user_id', 'can_read', 'can_write', 'granted_by', 'created_at', 'updated_at'))
   )
@@ -75,6 +75,18 @@ from information_schema.columns
 where table_schema = 'public'
   and table_name = 'pages'
   and column_name = 'internal_read_all';
+
+-- 8.5) 公開可視性列の確認（is_public）
+select
+  table_name,
+  column_name,
+  data_type,
+  is_nullable,
+  column_default
+from information_schema.columns
+where table_schema = 'public'
+  and table_name = 'pages'
+  and column_name = 'is_public';
 
 -- 9) slug一意制約の確認（重複投稿エラー切り分け）
 select

@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { supabase } from '@/utils/supabase/client';
 
@@ -11,6 +11,7 @@ type CandidateUser = {
   displayName: string | null;
 };
 
+type ReadAccessMode = 'public' | 'internal';
 type WriteAccessMode = 'owner' | 'members' | 'all-members';
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -23,6 +24,9 @@ const formatCandidateLabel = (candidate: CandidateUser) => {
 
 export default function EditPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const editSlug = searchParams.get('slug')?.trim() ?? '';
+  const isEditMode = editSlug.length > 0;
   const [title, setTitle] = useState('');
   const [slug, setSlug] = useState('');
   const [content, setContent] = useState('');
@@ -33,8 +37,12 @@ export default function EditPage() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [currentUserRole, setCurrentUserRole] = useState<'guest' | 'member' | 'admin' | null>(null);
+  const [editingPageId, setEditingPageId] = useState<string | null>(null);
+  const [canEditCurrentArticle, setCanEditCurrentArticle] = useState(false);
+  const [isLoadingEditArticle, setIsLoadingEditArticle] = useState(false);
 
   const [candidateUsers, setCandidateUsers] = useState<CandidateUser[]>([]);
+  const [readAccessMode, setReadAccessMode] = useState<ReadAccessMode>('internal');
   const [writeAccessMode, setWriteAccessMode] = useState<WriteAccessMode>('owner');
   const [memberEditors, setMemberEditors] = useState<string[]>(['']);
 
@@ -94,6 +102,120 @@ export default function EditPage() {
 
     loadCandidateUsers();
   }, [isLoggedIn, currentUserId]);
+
+  useEffect(() => {
+    const loadEditTarget = async () => {
+      if (!isEditMode || isCheckingAuth) {
+        return;
+      }
+
+      setIsLoadingEditArticle(true);
+      setError('');
+      setSuccess('');
+
+      if (!isLoggedIn || !currentUserId) {
+        setCanEditCurrentArticle(false);
+        setError('記事編集にはログインが必要です。');
+        setIsLoadingEditArticle(false);
+        return;
+      }
+
+      const initialResult = await supabase
+        .from('pages')
+        .select('id, title, slug, content, author_id, is_public, internal_write_all')
+        .eq('slug', editSlug)
+        .maybeSingle();
+
+      let pageData:
+        | {
+            id: string;
+            title: string;
+            slug: string;
+            content: string | null;
+            author_id: string;
+            is_public?: boolean | null;
+            internal_write_all?: boolean | null;
+          }
+        | null = initialResult.data;
+      let pageError = initialResult.error;
+
+      const schemaDriftError =
+        !!pageError &&
+        (pageError.message.includes('is_public') ||
+          pageError.message.includes('internal_write_all') ||
+          pageError.message.includes('column') ||
+          pageError.message.includes('schema cache'));
+
+      if (schemaDriftError) {
+        const fallbackResult = await supabase
+          .from('pages')
+          .select('id, title, slug, content, author_id')
+          .eq('slug', editSlug)
+          .maybeSingle();
+
+        pageData = fallbackResult.data;
+        pageError = fallbackResult.error;
+      }
+
+      if (pageError || !pageData) {
+        setCanEditCurrentArticle(false);
+        setError('編集対象の記事が見つかりませんでした。');
+        setIsLoadingEditArticle(false);
+        return;
+      }
+
+      const isAuthor = pageData.author_id === currentUserId;
+      const internalWriteAll = 'internal_write_all' in pageData ? Boolean(pageData.internal_write_all) : false;
+
+      let canEdit = currentUserRole === 'admin' || isAuthor || internalWriteAll;
+
+      if (!canEdit) {
+        const { data: permission } = await supabase
+          .from('page_permissions')
+          .select('can_write')
+          .eq('page_id', pageData.id)
+          .eq('user_id', currentUserId)
+          .eq('can_write', true)
+          .maybeSingle();
+        canEdit = Boolean(permission?.can_write);
+      }
+
+      if (!canEdit) {
+        setCanEditCurrentArticle(false);
+        setError('この記事の編集権限がありません。');
+        setIsLoadingEditArticle(false);
+        return;
+      }
+
+      setEditingPageId(pageData.id);
+      setCanEditCurrentArticle(true);
+      setTitle(pageData.title ?? '');
+      setSlug(pageData.slug ?? '');
+      setContent(pageData.content ?? '');
+      setReadAccessMode('is_public' in pageData && pageData.is_public ? 'public' : 'internal');
+      setWriteAccessMode(internalWriteAll ? 'all-members' : 'owner');
+      setMemberEditors(['']);
+
+      if (currentUserRole === 'admin' || isAuthor) {
+        const { data: permissions } = await supabase
+          .from('page_permissions')
+          .select('user_id, can_write')
+          .eq('page_id', pageData.id)
+          .eq('can_write', true)
+          .order('created_at', { ascending: true });
+
+        const writerIds = (permissions ?? []).map((permission) => permission.user_id).filter((userId) => userId.length > 0);
+        if (!internalWriteAll && writerIds.length > 0) {
+          setWriteAccessMode('members');
+          setMemberEditors(writerIds);
+        }
+      }
+
+      setIsLoadingEditArticle(false);
+    };
+
+    loadEditTarget();
+  }, [isEditMode, isCheckingAuth, isLoggedIn, currentUserId, currentUserRole, editSlug]);
 
   const addMemberEditorRow = () => {
     setMemberEditors((previous) => [...previous, '']);
@@ -162,9 +284,14 @@ export default function EditPage() {
     setError('');
     setSuccess('');
 
-    const canPost = currentUserRole === 'member' || currentUserRole === 'admin';
-    if (!canPost) {
-      setError('現在の権限では投稿できません。管理者に member 権限の付与を依頼してください。');
+    if (!isEditMode) {
+      const canPost = currentUserRole === 'member' || currentUserRole === 'admin';
+      if (!canPost) {
+        setError('現在の権限では投稿できません。管理者に member 権限の付与を依頼してください。');
+        return;
+      }
+    } else if (!editingPageId || !canEditCurrentArticle) {
+      setError('この記事を編集する権限がありません。');
       return;
     }
 
@@ -192,6 +319,80 @@ export default function EditPage() {
       const normalizedContent = content.trim();
       const excerpt = normalizedContent.replace(/\s+/g, ' ').slice(0, 120);
 
+      if (isEditMode && editingPageId) {
+        const baseUpdatePayload = {
+          title: title.trim(),
+          slug: slug.trim(),
+          content: normalizedContent,
+          excerpt: excerpt.length > 0 ? excerpt : null,
+        };
+
+        let updateError: { code?: string; message: string } | null = null;
+
+        const withPermissionColumnsResult = await supabase
+          .from('pages')
+          .update({
+            ...baseUpdatePayload,
+            is_public: readAccessMode === 'public',
+            internal_write_all: writeAccessMode === 'all-members',
+          })
+          .eq('id', editingPageId);
+
+        updateError = withPermissionColumnsResult.error;
+
+        const permissionColumnsMissing =
+          !!updateError &&
+          (updateError.message.includes('is_public') ||
+            updateError.message.includes('internal_write_all') ||
+            updateError.message.includes('column') ||
+            updateError.message.includes('schema cache'));
+
+        if (permissionColumnsMissing) {
+          const fallbackUpdateResult = await supabase
+            .from('pages')
+            .update(baseUpdatePayload)
+            .eq('id', editingPageId);
+
+          updateError = fallbackUpdateResult.error;
+
+          if (!fallbackUpdateResult.error && (writeAccessMode === 'all-members' || readAccessMode === 'public')) {
+            setError('記事更新は完了しましたが、DBスキーマ未反映のため公開/編集範囲の一部が未適用です。init_schema.sql または fix_public_visibility.sql を実行してください。');
+            router.push(`/blog/${encodeURIComponent(slug.trim())}`);
+            router.refresh();
+            return;
+          }
+        }
+
+        if (updateError) {
+          const isDuplicateSlug =
+            updateError.code === '23505' ||
+            updateError.message.includes('duplicate key') ||
+            updateError.message.includes('pages_slug_key');
+
+          if (isDuplicateSlug) {
+            setError('その slug はすでに使用されています。別の slug を入力してください。');
+            return;
+          }
+
+          const isRlsOrPermissionError =
+            updateError.message.includes('row-level security') ||
+            updateError.message.includes('permission denied');
+
+          if (isRlsOrPermissionError) {
+            setError('この記事を編集する権限がありません。');
+            return;
+          }
+
+          setError(`記事更新に失敗しました: ${updateError.message}`);
+          return;
+        }
+
+        setSuccess('更新しました。記事ページへ移動します。');
+        router.push(`/blog/${encodeURIComponent(slug.trim())}`);
+        router.refresh();
+        return;
+      }
+
       const baseInsertPayload = {
         title: title.trim(),
         slug: slug.trim(),
@@ -208,6 +409,7 @@ export default function EditPage() {
         .from('pages')
         .insert({
           ...baseInsertPayload,
+          is_public: readAccessMode === 'public',
           internal_write_all: writeAccessMode === 'all-members',
         })
         .select('id')
@@ -219,6 +421,7 @@ export default function EditPage() {
       const internalWriteColumnMissing =
         !!insertError &&
         (insertError.message.includes('internal_write_all') ||
+          insertError.message.includes('is_public') ||
           insertError.message.includes('column') ||
           insertError.message.includes('schema cache'));
 
@@ -232,8 +435,8 @@ export default function EditPage() {
         createdPage = fallbackResult.data;
         insertError = fallbackResult.error;
 
-        if (!fallbackResult.error && writeAccessMode === 'all-members') {
-          setError('投稿は完了しましたが、DBスキーマ未反映のため「部内全員を編集可」は未適用です。init_schema.sql を再実行してください。');
+        if (!fallbackResult.error && (writeAccessMode === 'all-members' || readAccessMode === 'public')) {
+          setError('投稿は完了しましたが、DBスキーマ未反映のため公開/編集範囲の一部が未適用です。init_schema.sql を再実行してください。');
           router.push('/blog');
           router.refresh();
           return;
@@ -309,8 +512,12 @@ export default function EditPage() {
   return (
     <div className="max-w-4xl mx-auto bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
       <div className="px-6 py-5 border-b border-gray-200 bg-gray-50">
-        <h1 className="text-xl font-bold text-gray-900">記事を投稿</h1>
-        <p className="mt-1 text-sm text-gray-600">タイトル・slug・Markdown本文を入力して部内記事を作成します。</p>
+        <h1 className="text-xl font-bold text-gray-900">{isEditMode ? '記事を編集' : '記事を投稿'}</h1>
+        <p className="mt-1 text-sm text-gray-600">
+          {isEditMode
+            ? '既存記事のタイトル・slug・Markdown本文を更新します。'
+            : 'タイトル・slug・Markdown本文を入力して部内記事を作成します。'}
+        </p>
       </div>
 
       <form onSubmit={handleSubmit} className="p-6 space-y-5">
@@ -322,13 +529,19 @@ export default function EditPage() {
 
         {!isCheckingAuth && !isLoggedIn && (
           <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-md px-3 py-2">
-            投稿にはログインが必要です。<Link href="/login" className="underline">ログインページ</Link>からログインしてください。
+            {isEditMode ? '編集には' : '投稿には'}ログインが必要です。<Link href="/login" className="underline">ログインページ</Link>からログインしてください。
           </p>
         )}
 
-        {!isCheckingAuth && isLoggedIn && currentUserRole === 'guest' && (
+        {!isCheckingAuth && !isEditMode && isLoggedIn && currentUserRole === 'guest' && (
           <p className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-md px-3 py-2">
             guest 権限では投稿できません。管理者に member 権限の付与を依頼してください。
+          </p>
+        )}
+
+        {isEditMode && isLoadingEditArticle && (
+          <p className="text-sm text-gray-600 bg-gray-50 border border-gray-200 rounded-md px-3 py-2">
+            編集対象の記事を読み込んでいます...
           </p>
         )}
 
@@ -376,6 +589,34 @@ export default function EditPage() {
             placeholder="# 見出し\n\n本文をMarkdownで入力..."
             disabled={isSubmitting}
           />
+        </div>
+
+        <div className="border border-gray-200 rounded-lg bg-gray-50 p-4 space-y-3">
+          <h2 className="text-sm font-semibold text-gray-900">公開範囲（read）</h2>
+          <p className="text-xs text-gray-600">記事ごとに「全体公開」か「部内限定」を選択できます。</p>
+
+          <div className="space-y-2 text-sm text-gray-700">
+            <label className="flex items-center gap-2">
+              <input
+                type="radio"
+                name="read-access"
+                checked={readAccessMode === 'public'}
+                onChange={() => setReadAccessMode('public')}
+                disabled={isSubmitting}
+              />
+              全体公開（未ログインでも閲覧可）
+            </label>
+            <label className="flex items-center gap-2">
+              <input
+                type="radio"
+                name="read-access"
+                checked={readAccessMode === 'internal'}
+                onChange={() => setReadAccessMode('internal')}
+                disabled={isSubmitting}
+              />
+              部内限定（ログイン + 権限に応じて閲覧可）
+            </label>
+          </div>
         </div>
 
         <div className="border border-gray-200 rounded-lg bg-gray-50 p-4 space-y-3">
@@ -481,10 +722,17 @@ export default function EditPage() {
           </Link>
           <button
             type="submit"
-            disabled={isSubmitting || isCheckingAuth || !isLoggedIn || (currentUserRole !== 'member' && currentUserRole !== 'admin')}
+            disabled={
+              isSubmitting ||
+              isCheckingAuth ||
+              isLoadingEditArticle ||
+              !isLoggedIn ||
+              (!isEditMode && currentUserRole !== 'member' && currentUserRole !== 'admin') ||
+              (isEditMode && !canEditCurrentArticle)
+            }
             className="px-4 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700 transition-colors text-sm font-medium disabled:opacity-60 disabled:cursor-not-allowed"
           >
-            {isSubmitting ? '投稿中...' : '投稿する'}
+            {isSubmitting ? (isEditMode ? '更新中...' : '投稿中...') : (isEditMode ? '更新する' : '投稿する')}
           </button>
         </div>
       </form>
