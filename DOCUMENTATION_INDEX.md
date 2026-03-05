@@ -2,6 +2,7 @@
 
 > **実装反映（2026-03-05）**
 > - 現在の main は `/edit` 投稿、`/blog` 一覧/詳細、ページ単位 read/write 権限、admin運用SQL まで反映済みです。
+> - 記事詳細の `編修する` から `/edit?slug=...` で既存記事更新まで対応済みです。
 > - 実装一次情報は `WIKI_ARCHITECTURE.md` / `SUPABASE_SETUP.md` / `POST_TO_BLOG_MVP_PLAN.md` を優先参照してください。
 
 > **整合性メモ（2026-03-01）**
@@ -21,6 +22,7 @@ New-MMA-wiki-demo/
 ├── SESSION_COMPONENT_SWITCH_GUIDE.md ← 📍 Session連動UI設計ガイド
 ├── DEV_SERVER_OPERATIONS.md     ← 📍 開発サーバー安全運用ガイド
 ├── POST_TO_BLOG_MVP_PLAN.md     ← 📍 Markdown投稿機能のMVP計画
+├── PR_SUMMARY_fix_blog_public_visibility_and_edit_flow.md ← 📍 直近fixのPRサマリ
 ├── mma-wiki-demo/
 │   ├── app/
 │   │   ├── page.tsx             ← ★ メインUI（250行）
@@ -209,6 +211,26 @@ New-MMA-wiki-demo/
 - `mma-wiki-demo/supabase/init_schema.sql`
 
 **読み応え**: 5分
+
+---
+
+### 🔟 **PR_SUMMARY_fix_blog_public_visibility_and_edit_flow.md** (直近fixのPRサマリ)
+**目的**: 公開範囲不整合と詳細→編集導線追加の変更点を、レビュー観点付きで素早く把握する  
+**読むべき人**: レビュアー・リリース担当・変更履歴を追う人  
+
+**含まれている内容**:
+- `is_public` を含む公開設定保存まわりの修正方針
+- `/blog/[slug]` の取得フォールバックと `notFound` 回避
+- `編修する` 導線追加と `/edit?slug=...` 編集モード対応
+- `fix_public_visibility.sql` を含む運用SQLの補足
+
+**関連ファイル**:
+- `mma-wiki-demo/app/blog/[slug]/page.tsx`
+- `mma-wiki-demo/app/edit/page.tsx`
+- `mma-wiki-demo/app/blog/[slug]/permission-manager.tsx`
+- `mma-wiki-demo/supabase/fix_public_visibility.sql`
+
+**読み応え**: 3-5分
 
 ---
 
