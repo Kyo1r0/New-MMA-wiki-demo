@@ -1,5 +1,9 @@
 # リファクタリング変更まとめ (Separate Pages)
 
+> **実装反映（2026-03-05）**
+> - この文書は履歴資料です。現行 main は認証導線・投稿MVP・read/write権限管理まで進んでいます。
+> - 最新状態の参照先: `WIKI_ARCHITECTURE.md`, `POST_TO_BLOG_MVP_PLAN.md`。
+
 > **注記（2026-03-01）**
 > この文書は `feature/separate-pages` 実施時点の変更記録です。現行実装との差分がある場合は履歴情報として扱ってください。
 > 現行仕様は `README.md` と `DOCUMENTATION_INDEX.md` の最新リンク先を参照してください。

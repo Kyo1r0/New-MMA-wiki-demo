@@ -1,5 +1,9 @@
 # MMA Wiki - クイックリファレンス & カスタマイズチートシート
 
+> **実装反映（2026-03-05）**
+> - `/edit` 投稿、`/blog` 一覧・詳細、read/write 権限UI、admin表示が現行実装です。
+> - SQL運用の確認は `mma-wiki-demo/supabase/verify_schema.sql` と `admin_role_setup.sql` を参照してください。
+
 > **注記（2026-03-01）**
 > このファイルには初期UI（サイドバー中心）の例が一部残っています。現行UIはヘッダー中心構成です。
 > 現行の一次情報は `README.md` / `SESSION_COMPONENT_SWITCH_GUIDE.md` / `POST_TO_BLOG_MVP_PLAN.md` を参照してください。

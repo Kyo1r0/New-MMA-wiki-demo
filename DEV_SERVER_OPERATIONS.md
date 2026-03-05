@@ -1,5 +1,9 @@
 # 🧰 開発サーバー運用手順（Windows / Next.js）
 
+> **実装反映（2026-03-05）**
+> - 投稿MVP（`/edit`→`/blog`）と権限管理（read/write/admin）運用に合わせて、起動・トラブルシュート手順を利用する。
+> - `/blog` の取得失敗時は画面エラー詳細と `verify_schema.sql` の結果をセットで確認する。
+
 **対象**: MMA NextGen Wiki  
 **更新日**: 2026-03-01
 

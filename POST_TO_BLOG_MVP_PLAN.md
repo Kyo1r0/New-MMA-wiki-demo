@@ -1,5 +1,9 @@
 # 📝 Markdown投稿→ブログ反映 MVP 計画
 
+> **実装反映（2026-03-05）**
+> - MVP（投稿→一覧）は完了済み。
+> - 追加で `/blog/[slug]` 詳細、read/write 権限管理、admin可視化、RLS再帰修正まで main に反映済み。
+
 **対象**: MMA NextGen Wiki  
 **更新日**: 2026-03-05
 

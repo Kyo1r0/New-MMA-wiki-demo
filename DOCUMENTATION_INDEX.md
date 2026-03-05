@@ -1,5 +1,9 @@
 # 📖 MMA Wiki デモ - ドキュメント索引
 
+> **実装反映（2026-03-05）**
+> - 現在の main は `/edit` 投稿、`/blog` 一覧/詳細、ページ単位 read/write 権限、admin運用SQL まで反映済みです。
+> - 実装一次情報は `WIKI_ARCHITECTURE.md` / `SUPABASE_SETUP.md` / `POST_TO_BLOG_MVP_PLAN.md` を優先参照してください。
+
 > **整合性メモ（2026-03-01）**
 > - 現行仕様の一次情報は `README.md` / `SUPABASE_SETUP.md` / `SESSION_COMPONENT_SWITCH_GUIDE.md` / `POST_TO_BLOG_MVP_PLAN.md`。
 > - `WIKI_ARCHITECTURE.md` / `QUICK_REFERENCE.md` / `SEPARATE_PAGES_REFRACTOR.md` / `REFRACTOR_CHANGE_SUMMARY.md` は履歴・学習用途の記述を含みます。

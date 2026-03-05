@@ -1,5 +1,10 @@
 # Supabase初期設定ガイド
 
+> **実装反映（2026-03-05）**
+> - `pages` に `internal_read_all` / `internal_write_all`、`page_permissions` による個別ACLを導入済み。
+> - 運用SQL: `fix_policy_recursion.sql`（RLS再帰対処）, `admin_role_setup.sql`（admin昇降格）。
+> - 検証は `verify_schema.sql` を基準に実施する。
+
 **プロジェクト**: MMA NextGen Wiki  
 **フェーズ**: 1（デモ＆基本機能版）  
 **更新日**: 2026年3月1日

@@ -1,5 +1,9 @@
 # Separate Pages リファクタリング記録
 
+> **実装反映（2026-03-05）**
+> - 本文は分離リファクタ時点の記録です。
+> - 現行は `/edit` 投稿、`/blog` 一覧/詳細、read/write 権限、admin可視化まで反映済みです。
+
 > **注記（2026-03-01）**
 > この文書は `feature/separate-pages` 時点の履歴記録です。現在は認証・Session連動の都合で `layout.tsx` など一部実装が更新されています。
 > 最新状態は `README.md` / `SESSION_COMPONENT_SWITCH_GUIDE.md` を優先してください。

@@ -1,5 +1,9 @@
 # PR Summary: feature/profile-auto-init → main
 
+> **追記（2026-03-05）**
+> - この履歴以降に、投稿MVP・`/blog/[slug]`・read/write権限・admin運用整備が main へ反映済みです。
+> - 現行仕様は `WIKI_ARCHITECTURE.md` と `SUPABASE_SETUP.md` を参照してください。
+
 > **注記（2026-03-01）**
 > このPRサマリは履歴資料です。対象変更は `main` に反映済みです。
 

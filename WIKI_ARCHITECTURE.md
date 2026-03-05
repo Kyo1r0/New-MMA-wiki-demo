@@ -1,5 +1,10 @@
 # MMA Wiki デモ - アーキテクチャ（現行版）
 
+> **実装反映（2026-03-05）**
+> - 投稿導線（`/edit`→DB→`/blog`）と詳細表示（`/blog/[slug]`）は運用中。
+> - 権限モデルは read/write の2軸（全体フラグ + `page_permissions`）で実装済み。
+> - adminロールはSQL運用し、UIで識別可能な表示を導入済み。
+
 **最終更新**: 2026-03-05  
 **対象**: `New-MMA-wiki-demo/mma-wiki-demo`
 
