@@ -62,6 +62,7 @@ create table if not exists public.pages (
   content text not null default '',
   excerpt varchar(500),
   is_published boolean not null default false,
+  is_public boolean not null default false,
   internal_read_all boolean not null default true,
   internal_write_all boolean not null default false,
   author_id uuid not null references auth.users(id) on delete cascade,
@@ -70,6 +71,9 @@ create table if not exists public.pages (
   constraint pages_title_not_empty check (char_length(title) > 0),
   constraint pages_slug_not_empty check (char_length(slug) > 0)
 );
+
+alter table public.pages
+  add column if not exists is_public boolean not null default false;
 
 alter table public.pages
   add column if not exists internal_read_all boolean not null default true;
@@ -81,6 +85,7 @@ comment on table public.pages is 'Wiki/ブログ記事テーブル';
 comment on column public.pages.title is '記事タイトル';
 comment on column public.pages.slug is 'URLスラッグ';
 comment on column public.pages.is_published is '公開状態';
+comment on column public.pages.is_public is 'true の場合、未ログインを含む全ユーザーが閲覧可';
 comment on column public.pages.internal_read_all is 'true の場合、member/admin は全員閲覧可';
 comment on column public.pages.internal_write_all is 'true の場合、member/admin は全員編集可';
 
@@ -125,13 +130,16 @@ drop policy if exists page_permissions_insert_owner_or_admin on public.page_perm
 drop policy if exists page_permissions_update_owner_or_admin on public.page_permissions;
 drop policy if exists page_permissions_delete_owner_or_admin on public.page_permissions;
 
--- 閲覧可否: 著者 / admin / 指定メンバー / (internal_read_all=true かつ member/admin)
+-- 閲覧可否:
+-- 1) 公開記事 (is_public=true かつ is_published=true) は未ログイン含め全員
+-- 2) それ以外は著者 / admin / 指定メンバー / (internal_read_all=true かつ member/admin)
 create policy pages_select_published_or_own
 on public.pages
 for select
-to authenticated
+to anon, authenticated
 using (
-  auth.uid() = author_id
+  (is_published = true and is_public = true)
+  or auth.uid() = author_id
   or exists (
     select 1
     from public.profiles p

@@ -2,7 +2,9 @@
 
 > **実装反映（2026-03-05）**
 > - `/edit` 投稿、`/blog` 一覧・詳細、read/write 権限UI、admin表示が現行実装です。
+> - 記事詳細の `編修する` から `/edit?slug=...` へ遷移し、既存記事を更新できます。
 > - SQL運用の確認は `mma-wiki-demo/supabase/verify_schema.sql` と `admin_role_setup.sql` を参照してください。
+> - 公開設定が反映されない場合は `mma-wiki-demo/supabase/fix_public_visibility.sql` を実行してください。
 
 > **注記（2026-03-01）**
 > このファイルには初期UI（サイドバー中心）の例が一部残っています。現行UIはヘッダー中心構成です。

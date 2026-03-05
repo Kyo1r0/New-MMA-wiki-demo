@@ -2,6 +2,7 @@
 
 > **実装反映（2026-03-05）**
 > - main には投稿MVP（`/edit`→DB→`/blog`）、記事詳細（`/blog/[slug]`）が反映済み。
+> - 記事詳細に `編修する` 導線を追加し、`/edit?slug=...` で既存記事を更新可能。
 > - 権限は read/write 2軸（`internal_read_all` / `internal_write_all` + `page_permissions`）で運用。
 > - admin運用SQL（`admin_role_setup.sql`）とRLS障害対処SQL（`fix_policy_recursion.sql`）を追加済み。
 
@@ -187,6 +188,10 @@ New-MMA-wiki-demo/
 ---
 
 ## � 更新履歴
+
+- 2026-03-05: 記事編集導線を追加。
+  - `mma-wiki-demo/app/blog/[slug]/page.tsx` に `編修する` リンクを追加（編集権限ユーザーのみ表示）
+  - `mma-wiki-demo/app/edit/page.tsx` を新規投稿/既存編集の両対応に拡張（`/edit?slug=...`）
 
 - 2026-03-01: `main` に投稿機能MVP計画ドキュメントを追加。
   - `POST_TO_BLOG_MVP_PLAN.md` を新規追加

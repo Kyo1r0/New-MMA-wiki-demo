@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { supabase } from '@/utils/supabase/client';
 
-type ReadAccessMode = 'all-members' | 'members';
+type ReadAccessMode = 'public' | 'all-members' | 'members';
 type WriteAccessMode = 'owner' | 'members' | 'all-members';
 
 type PermissionManagerProps = {
@@ -153,16 +153,54 @@ export default function PermissionManager({
         return;
       }
 
-      const { error: updatePageError } = await supabase
+      let updatePageError: { message: string } | null = null;
+      let partialWarning = '';
+
+      const primaryUpdate = await supabase
         .from('pages')
         .update({
+          is_public: readAccessMode === 'public',
           internal_read_all: readAccessMode === 'all-members',
           internal_write_all: writeAccessMode === 'all-members',
         })
         .eq('id', pageId);
 
+      updatePageError = primaryUpdate.error;
+
+      const schemaDriftError =
+        !!updatePageError &&
+        (updatePageError.message.includes('is_public') ||
+          updatePageError.message.includes('internal_read_all') ||
+          updatePageError.message.includes('internal_write_all') ||
+          updatePageError.message.includes('column') ||
+          updatePageError.message.includes('schema cache'));
+
+      if (schemaDriftError) {
+        const fallbackUpdate = await supabase
+          .from('pages')
+          .update({
+            internal_write_all: writeAccessMode === 'all-members',
+          })
+          .eq('id', pageId);
+
+        updatePageError = fallbackUpdate.error;
+
+        if (!fallbackUpdate.error) {
+          partialWarning = '編集権限は保存しましたが、公開範囲/閲覧範囲はDBスキーマ未反映のため未適用です。init_schema.sql または fix_public_visibility.sql を実行してください。';
+        }
+      }
+
       if (updatePageError) {
-        setError('公開範囲・編集範囲の更新に失敗しました。時間をおいて再試行してください。');
+        const isPermissionError =
+          updatePageError.message.includes('row-level security') ||
+          updatePageError.message.includes('permission denied');
+
+        if (isPermissionError) {
+          setError('公開範囲・編集範囲の更新権限がありません。作成者または admin で実行してください。');
+          return;
+        }
+
+        setError(`公開範囲・編集範囲の更新に失敗しました: ${updatePageError.message}`);
         return;
       }
 
@@ -209,6 +247,11 @@ export default function PermissionManager({
         }
       }
 
+      if (partialWarning) {
+        setError(partialWarning);
+        return;
+      }
+
       setSuccess('権限を更新しました。');
     } catch {
       setError('権限更新中にエラーが発生しました。時間をおいて再試行してください。');
@@ -234,6 +277,16 @@ export default function PermissionManager({
       <div className="border border-gray-200 rounded-lg bg-white p-3 space-y-2">
         <h3 className="text-sm font-semibold text-gray-900">閲覧権限（read）</h3>
         <div className="space-y-2 text-sm text-gray-700">
+          <label className="flex items-center gap-2">
+            <input
+              type="radio"
+              name="detail-read-access"
+              checked={readAccessMode === 'public'}
+              onChange={() => setReadAccessMode('public')}
+              disabled={isSaving}
+            />
+            全体公開（未ログインでも閲覧可）
+          </label>
           <label className="flex items-center gap-2">
             <input
               type="radio"
