@@ -1,5 +1,10 @@
 # 📖 MMA Wiki デモ - ドキュメント索引
 
+> **最新実装反映（2026-03-05）**
+> - 現在の実装重点は `read/write` 権限管理と `admin` 運用整備です。
+> - 優先参照順: `WIKI_ARCHITECTURE.md` → `SUPABASE_SETUP.md` → `POST_TO_BLOG_MVP_PLAN.md`。
+> - DB運用SQL: `mma-wiki-demo/supabase/fix_policy_recursion.sql`, `mma-wiki-demo/supabase/admin_role_setup.sql`。
+
 > **整合性メモ（2026-03-01）**
 > - 現行仕様の一次情報は `README.md` / `SUPABASE_SETUP.md` / `SESSION_COMPONENT_SWITCH_GUIDE.md` / `POST_TO_BLOG_MVP_PLAN.md`。
 > - `WIKI_ARCHITECTURE.md` / `QUICK_REFERENCE.md` / `SEPARATE_PAGES_REFRACTOR.md` / `REFRACTOR_CHANGE_SUMMARY.md` は履歴・学習用途の記述を含みます。

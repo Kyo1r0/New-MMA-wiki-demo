@@ -1,5 +1,10 @@
 # Supabase初期設定ガイド
 
+> **最新実装反映（2026-03-05）**
+> - `pages` に `internal_read_all` / `internal_write_all` を追加。
+> - `page_permissions` テーブルで個別 read/write 権限を管理。
+> - 運用SQLを追加: `fix_policy_recursion.sql`（RLS再帰対処）, `admin_role_setup.sql`（admin昇降格）。
+
 **プロジェクト**: MMA NextGen Wiki  
 **フェーズ**: 1（デモ＆基本機能版）  
 **更新日**: 2026年3月1日

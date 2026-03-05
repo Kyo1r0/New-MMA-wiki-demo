@@ -1,5 +1,10 @@
 # 📝 Markdown投稿→ブログ反映 MVP 計画
 
+> **反映メモ（2026-03-05）**
+> - MVP範囲（投稿→一覧）は完了済み。
+> - 追加で `/blog/[slug]` 詳細、`read/write` 権限UI、`admin` 可視化まで実装済み。
+> - 既知の障害だった RLS 再帰は `fix_policy_recursion.sql` で解消済み。
+
 **対象**: MMA NextGen Wiki  
 **更新日**: 2026-03-05
 

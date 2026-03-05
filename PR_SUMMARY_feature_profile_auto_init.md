@@ -1,5 +1,9 @@
 # PR Summary: feature/profile-auto-init → main
 
+> **追記（2026-03-05）**
+> - このPR以降、投稿MVP・ブログ詳細・ページ単位 read/write 権限・admin運用SQLが追加実装されています。
+> - 最新の実装状態は `WIKI_ARCHITECTURE.md` と `SUPABASE_SETUP.md` を参照してください。
+
 > **注記（2026-03-01）**
 > このPRサマリは履歴資料です。対象変更は `main` に反映済みです。
 

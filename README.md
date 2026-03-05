@@ -1,5 +1,12 @@
 # MMA NextGen Wiki Project (仮)
 
+> **最新実装反映（2026-03-05）**
+> - 投稿MVP: `/edit` → `pages` 保存 → `/blog` 一覧表示が動作。
+> - 詳細導線: `/blog/[slug]` を追加し Markdown を表示。
+> - 権限: `read/write` をページ単位で管理（`internal_read_all` / `internal_write_all` + `page_permissions`）。
+> - 管理者: `admin` ロール運用SQLを追加し、UIに `ADMIN` 表示を追加。
+> - DB運用: `fix_policy_recursion.sql` / `admin_role_setup.sql` を追加。
+
 ## 概要 (Overview)
 電気通信大学MMAの部内Wiki刷新プロジェクトです。
 現在稼働している旧Wikiは歴史的価値があるものの、独自記法やレガシーなシステムにより新規参入の障壁となっていました。

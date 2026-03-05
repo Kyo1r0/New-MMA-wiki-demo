@@ -1,5 +1,9 @@
 # 🔐 Session連動コンポーネント出し分けガイド
 
+> **最新反映（2026-03-05）**
+> - Session出し分けは `/layout`, `/`, `/blog`, `/edit` で運用中。
+> - adminログイン時はヘッダーと `/blog` で視覚的に識別できる表示を導入済み。
+
 **対象**: MMA NextGen Wiki（Next.js App Router + Supabase）  
 **更新日**: 2026-03-01
 
