@@ -3,6 +3,45 @@ import { createClient } from '@/utils/supabase/server';
 
 export default async function BlogPage() {
   const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return (
+      <div className="p-8">
+        <h1 className="text-3xl font-bold text-gray-900">ブログ</h1>
+        <p className="mt-3 text-sm text-gray-600">このページは部内向けです。ログインして閲覧してください。</p>
+        <div className="mt-6">
+          <Link
+            href="/login?next=/blog"
+            className="inline-flex items-center rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+          >
+            ログインする
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('role')
+    .eq('id', user.id)
+    .maybeSingle();
+
+  const role = profile?.role;
+  const canViewInternal = role === 'member' || role === 'admin';
+
+  if (!canViewInternal) {
+    return (
+      <div className="p-8">
+        <h1 className="text-3xl font-bold text-gray-900">ブログ</h1>
+        <p className="mt-3 text-sm text-gray-600">現在の権限では閲覧できません。管理者に member 権限の付与を依頼してください。</p>
+      </div>
+    );
+  }
+
   const { data: posts, error } = await supabase
     .from('pages')
     .select('id, title, slug, excerpt, content, created_at')
