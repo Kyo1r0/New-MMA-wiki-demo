@@ -19,8 +19,6 @@ type PermissionManagerProps = {
   }>;
 };
 
-const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-
 const formatCandidateLabel = (candidate: { id: string; role: 'member' | 'admin'; displayName: string | null }) => {
   const fallbackName = candidate.id.slice(0, 8);
   const name = candidate.displayName?.trim() || fallbackName;
@@ -47,7 +45,7 @@ export default function PermissionManager({
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [isSaving, setIsSaving] = useState(false);
-  const datalistId = `permission-candidates-${pageId}`;
+  const candidateIdSet = new Set(candidateUsers.map((candidate) => candidate.id));
 
   const addMemberReaderRow = () => {
     setMemberReaders((previous) => [...previous, '']);
@@ -83,10 +81,10 @@ export default function PermissionManager({
   const normalizeMemberEditorIds = () =>
     memberEditors.map((memberId) => memberId.trim()).filter((memberId) => memberId.length > 0);
 
-  const validateUuidList = (memberIds: string[], label: string) => {
-    const invalidMemberId = memberIds.find((memberId) => !UUID_REGEX.test(memberId));
+  const validateCandidateList = (memberIds: string[], label: string) => {
+    const invalidMemberId = memberIds.find((memberId) => !candidateIdSet.has(memberId));
     if (invalidMemberId) {
-      setError(`${label}のユーザーIDは UUID 形式で入力してください。`);
+      setError(`${label}は候補ユーザーから選択してください。`);
       return false;
     }
 
@@ -110,7 +108,7 @@ export default function PermissionManager({
       return false;
     }
 
-    return validateUuidList(memberReaderIds, '閲覧メンバー');
+    return validateCandidateList(memberReaderIds, '閲覧メンバー');
   };
 
   const validateMemberEditors = (memberEditorIds: string[]) => {
@@ -123,7 +121,7 @@ export default function PermissionManager({
       return false;
     }
 
-    return validateUuidList(memberEditorIds, '編集メンバー');
+    return validateCandidateList(memberEditorIds, '編集メンバー');
   };
 
   const handleSave = async () => {
@@ -312,27 +310,27 @@ export default function PermissionManager({
         {readAccessMode === 'members' && (
           <div className="space-y-2">
             {candidateUsers.length > 0 && (
-              <>
-                <datalist id={`${datalistId}-read`}>
-                  {candidateUsers.map((candidate) => (
-                    <option key={candidate.id} value={candidate.id} label={formatCandidateLabel(candidate)} />
-                  ))}
-                </datalist>
-                <p className="text-xs text-gray-500">候補ユーザーを入力補完できます（{candidateUsers.length}件）。</p>
-              </>
+              <p className="text-xs text-gray-500">候補から選択してください（{candidateUsers.length}件）。</p>
             )}
 
             {memberReaders.map((memberId, index) => (
               <div key={`member-reader-${index}`} className="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-2 items-center">
-                <input
-                  type="text"
+                <select
                   value={memberId}
                   onChange={(event) => updateMemberReader(index, event.target.value)}
-                  placeholder="閲覧メンバーのユーザーID(UUID)"
-                  list={`${datalistId}-read`}
                   className="h-10 rounded-md border border-gray-300 px-3 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   disabled={isSaving}
-                />
+                >
+                  <option value="">閲覧メンバーを選択</option>
+                  {memberId && !candidateIdSet.has(memberId) && (
+                    <option value={memberId}>不明ユーザー ({memberId.slice(0, 8)})</option>
+                  )}
+                  {candidateUsers.map((candidate) => (
+                    <option key={candidate.id} value={candidate.id}>
+                      {formatCandidateLabel(candidate)}
+                    </option>
+                  ))}
+                </select>
 
                 <button
                   type="button"
@@ -397,27 +395,27 @@ export default function PermissionManager({
         {writeAccessMode === 'members' && (
           <div className="space-y-2">
             {candidateUsers.length > 0 && (
-              <>
-                <datalist id={datalistId}>
-                  {candidateUsers.map((candidate) => (
-                    <option key={candidate.id} value={candidate.id} label={formatCandidateLabel(candidate)} />
-                  ))}
-                </datalist>
-                <p className="text-xs text-gray-500">候補ユーザーを入力補完できます（{candidateUsers.length}件）。</p>
-              </>
+              <p className="text-xs text-gray-500">候補から選択してください（{candidateUsers.length}件）。</p>
             )}
 
             {memberEditors.map((memberId, index) => (
               <div key={`member-editor-${index}`} className="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-2 items-center">
-                <input
-                  type="text"
+                <select
                   value={memberId}
                   onChange={(event) => updateMemberEditor(index, event.target.value)}
-                  placeholder="編集メンバーのユーザーID(UUID)"
-                  list={datalistId}
                   className="h-10 rounded-md border border-gray-300 px-3 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   disabled={isSaving}
-                />
+                >
+                  <option value="">編集メンバーを選択</option>
+                  {memberId && !candidateIdSet.has(memberId) && (
+                    <option value={memberId}>不明ユーザー ({memberId.slice(0, 8)})</option>
+                  )}
+                  {candidateUsers.map((candidate) => (
+                    <option key={candidate.id} value={candidate.id}>
+                      {formatCandidateLabel(candidate)}
+                    </option>
+                  ))}
+                </select>
 
                 <button
                   type="button"
