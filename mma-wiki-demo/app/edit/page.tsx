@@ -14,8 +14,6 @@ type CandidateUser = {
 type ReadAccessMode = 'public' | 'internal';
 type WriteAccessMode = 'owner' | 'members' | 'all-members';
 
-const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-
 const formatCandidateLabel = (candidate: CandidateUser) => {
   const fallbackName = candidate.id.slice(0, 8);
   const name = candidate.displayName?.trim() || fallbackName;
@@ -33,6 +31,7 @@ export default function EditPage() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
@@ -42,6 +41,7 @@ export default function EditPage() {
   const [isLoadingEditArticle, setIsLoadingEditArticle] = useState(false);
 
   const [candidateUsers, setCandidateUsers] = useState<CandidateUser[]>([]);
+  const candidateIdSet = new Set(candidateUsers.map((candidate) => candidate.id));
   const [readAccessMode, setReadAccessMode] = useState<ReadAccessMode>('internal');
   const [writeAccessMode, setWriteAccessMode] = useState<WriteAccessMode>('owner');
   const [memberEditors, setMemberEditors] = useState<string[]>(['']);
@@ -263,9 +263,9 @@ export default function EditPage() {
       return false;
     }
 
-    const invalidMemberId = memberEditorIds.find((memberId) => !UUID_REGEX.test(memberId));
+    const invalidMemberId = memberEditorIds.find((memberId) => !candidateIdSet.has(memberId));
     if (invalidMemberId) {
-      setError('追加メンバーのユーザーIDは UUID 形式で入力してください。');
+      setError('追加メンバーは候補ユーザーから選択してください。');
       return false;
     }
 
@@ -283,6 +283,10 @@ export default function EditPage() {
     event.preventDefault();
     setError('');
     setSuccess('');
+
+    if (isDeleting) {
+      return;
+    }
 
     if (!isEditMode) {
       const canPost = currentUserRole === 'member' || currentUserRole === 'admin';
@@ -509,6 +513,70 @@ export default function EditPage() {
     }
   };
 
+  const handleDeleteArticle = async () => {
+    setError('');
+    setSuccess('');
+
+    if (isSubmitting) {
+      return;
+    }
+
+    if (!isEditMode || !editingPageId) {
+      setError('削除対象の記事が見つかりませんでした。');
+      return;
+    }
+
+    if (currentUserRole !== 'admin') {
+      setError('記事を削除できるのは admin のみです。');
+      return;
+    }
+
+    const shouldDelete = window.confirm('この記事を削除します。元に戻せません。よろしいですか？');
+    if (!shouldDelete) {
+      return;
+    }
+
+    setIsDeleting(true);
+
+    try {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (!user) {
+        setError('記事削除にはログインが必要です。');
+        return;
+      }
+
+      const { error: deleteError } = await supabase
+        .from('pages')
+        .delete()
+        .eq('id', editingPageId);
+
+      if (deleteError) {
+        const isRlsOrPermissionError =
+          deleteError.message.includes('row-level security') ||
+          deleteError.message.includes('permission denied');
+
+        if (isRlsOrPermissionError) {
+          setError('この記事を削除する権限がありません。');
+          return;
+        }
+
+        setError(`記事の削除に失敗しました: ${deleteError.message}`);
+        return;
+      }
+
+      setSuccess('記事を削除しました。ブログ一覧へ移動します。');
+      router.push('/blog');
+      router.refresh();
+    } catch {
+      setError('記事削除中にエラーが発生しました。時間をおいて再試行してください。');
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   return (
     <div className="max-w-4xl mx-auto bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
       <div className="px-6 py-5 border-b border-gray-200 bg-gray-50">
@@ -659,27 +727,27 @@ export default function EditPage() {
           {writeAccessMode === 'members' && (
             <div className="space-y-2">
               {candidateUsers.length > 0 && (
-                <>
-                  <datalist id="permission-user-candidates">
-                    {candidateUsers.map((candidate) => (
-                      <option key={candidate.id} value={candidate.id} label={formatCandidateLabel(candidate)} />
-                    ))}
-                  </datalist>
-                  <p className="text-xs text-gray-500">候補ユーザーを入力補完できます（{candidateUsers.length}件）。</p>
-                </>
+                <p className="text-xs text-gray-500">候補から選択してください（{candidateUsers.length}件）。</p>
               )}
 
               {memberEditors.map((memberId, index) => (
                 <div key={`member-editor-${index}`} className="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-2 items-center">
-                  <input
-                    type="text"
+                  <select
                     value={memberId}
                     onChange={(event) => updateMemberEditor(index, event.target.value)}
-                    placeholder="追加メンバーのユーザーID(UUID)"
-                    list="permission-user-candidates"
                     className="h-10 rounded-md border border-gray-300 px-3 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     disabled={isSubmitting}
-                  />
+                  >
+                    <option value="">編集メンバーを選択</option>
+                    {memberId && !candidateIdSet.has(memberId) && (
+                      <option value={memberId}>不明ユーザー ({memberId.slice(0, 8)})</option>
+                    )}
+                    {candidateUsers.map((candidate) => (
+                      <option key={candidate.id} value={candidate.id}>
+                        {formatCandidateLabel(candidate)}
+                      </option>
+                    ))}
+                  </select>
 
                   <button
                     type="button"
@@ -713,7 +781,29 @@ export default function EditPage() {
           </div>
         </div>
 
-        <div className="flex items-center justify-end gap-3">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            {isEditMode && (
+              <button
+                type="button"
+                onClick={handleDeleteArticle}
+                disabled={
+                  isDeleting ||
+                  isSubmitting ||
+                  isCheckingAuth ||
+                  isLoadingEditArticle ||
+                  !isLoggedIn ||
+                  !canEditCurrentArticle ||
+                  currentUserRole !== 'admin'
+                }
+                className="px-4 py-2 rounded-md border border-red-300 text-sm text-red-700 hover:bg-red-50 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+              >
+                {isDeleting ? '削除中...' : '記事の削除'}
+              </button>
+            )}
+          </div>
+
+          <div className="flex items-center gap-3">
           <Link
             href="/blog"
             className="px-4 py-2 rounded-md border border-gray-300 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
@@ -724,6 +814,7 @@ export default function EditPage() {
             type="submit"
             disabled={
               isSubmitting ||
+              isDeleting ||
               isCheckingAuth ||
               isLoadingEditArticle ||
               !isLoggedIn ||
@@ -734,6 +825,7 @@ export default function EditPage() {
           >
             {isSubmitting ? (isEditMode ? '更新中...' : '投稿中...') : (isEditMode ? '更新する' : '投稿する')}
           </button>
+          </div>
         </div>
       </form>
     </div>
