@@ -19,24 +19,30 @@ export default async function BlogPage() {
 
   const isAdmin = role === 'admin';
 
-  const primaryResult = await supabase
+  const baseQuery = supabase
     .from('pages')
-    .select('id, title, slug, excerpt, content, created_at, is_public')
-    .eq('is_published', true)
+    .select('id, title, slug, excerpt, content, created_at, is_public, is_published')
     .order('created_at', { ascending: false });
+
+  const primaryResult = isAdmin
+    ? await baseQuery
+    : await baseQuery.eq('is_published', true);
 
   let posts = primaryResult.data;
   let error = primaryResult.error;
 
   const missingIsPublicColumn = !!error && (error.message.includes('is_public') || error.message.includes('column'));
   if (missingIsPublicColumn) {
-    const fallbackResult = await supabase
+    const fallbackQuery = supabase
       .from('pages')
-      .select('id, title, slug, excerpt, content, created_at')
-      .eq('is_published', true)
+      .select('id, title, slug, excerpt, content, created_at, is_published')
       .order('created_at', { ascending: false });
 
-    posts = fallbackResult.data?.map((post) => ({ ...post, is_public: false }));
+    const fallbackResult = isAdmin
+      ? await fallbackQuery
+      : await fallbackQuery.eq('is_published', true);
+
+    posts = fallbackResult.data ? fallbackResult.data.map((post) => ({ ...post, is_public: false })) : null;
     error = fallbackResult.error;
   }
 
@@ -58,7 +64,11 @@ export default async function BlogPage() {
           </span>
         )}
       </div>
-      <p className="mt-3 text-sm text-gray-600">公開記事を新着順で表示しています（全体公開/部内限定を含む）。</p>
+      <p className="mt-3 text-sm text-gray-600">
+        {isAdmin
+          ? 'admin は公開/非公開を含む全記事を新着順で表示しています。'
+          : '公開記事を新着順で表示しています（全体公開/部内限定を含む）。'}
+      </p>
 
       {!user && (
         <p className="mt-2 text-xs text-gray-500">未ログインでは「全体公開」の記事のみ表示されます。</p>
@@ -102,6 +112,11 @@ export default async function BlogPage() {
                 </div>
                 <div className="mt-2 flex items-center gap-2">
                   <p className="text-sm text-gray-500">slug: {post.slug}</p>
+                  {isAdmin && (
+                    <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${post.is_published ? 'bg-blue-100 text-blue-700' : 'bg-gray-200 text-gray-700'}`}>
+                      {post.is_published ? '公開中' : '下書き'}
+                    </span>
+                  )}
                   <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${post.is_public ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>
                     {post.is_public ? '全体公開' : '部内限定'}
                   </span>

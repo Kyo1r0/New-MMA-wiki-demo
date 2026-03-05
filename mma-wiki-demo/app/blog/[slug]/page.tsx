@@ -20,12 +20,24 @@ export default async function BlogDetailPage({ params }: BlogDetailPageProps) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const primaryResult = await supabase
+  let isAdmin = false;
+  if (user) {
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', user.id)
+      .maybeSingle();
+    isAdmin = profile?.role === 'admin';
+  }
+
+  const primaryQuery = supabase
     .from('pages')
     .select('id, title, slug, content, created_at, author_id, is_public, internal_read_all, internal_write_all')
-    .eq('slug', decodedSlug)
-    .eq('is_published', true)
-    .maybeSingle();
+    .eq('slug', decodedSlug);
+
+  const primaryResult = isAdmin
+    ? await primaryQuery.maybeSingle()
+    : await primaryQuery.eq('is_published', true).maybeSingle();
 
   let post:
     | {
@@ -51,12 +63,14 @@ export default async function BlogDetailPage({ params }: BlogDetailPageProps) {
       error.message.includes('schema cache'));
 
   if (schemaDriftError) {
-    const fallbackResult = await supabase
+    const fallbackQuery = supabase
       .from('pages')
       .select('id, title, slug, content, created_at, author_id')
-      .eq('slug', decodedSlug)
-      .eq('is_published', true)
-      .maybeSingle();
+      .eq('slug', decodedSlug);
+
+    const fallbackResult = isAdmin
+      ? await fallbackQuery.maybeSingle()
+      : await fallbackQuery.eq('is_published', true).maybeSingle();
 
     post = fallbackResult.data;
     error = fallbackResult.error;
@@ -68,16 +82,6 @@ export default async function BlogDetailPage({ params }: BlogDetailPageProps) {
 
   const publishedAt = new Date(post.created_at).toLocaleDateString('ja-JP');
   const isAuthor = Boolean(user && user.id === post.author_id);
-
-  let isAdmin = false;
-  if (user) {
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('role')
-      .eq('id', user.id)
-      .maybeSingle();
-    isAdmin = profile?.role === 'admin';
-  }
 
   const canManagePermissions = isAuthor || isAdmin;
 
