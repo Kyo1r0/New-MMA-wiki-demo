@@ -17,8 +17,11 @@ type ReadAccessMode = 'public' | 'internal';
 type WriteAccessMode = 'owner' | 'members' | 'all-members';
 
 const formatCandidateLabel = (candidate: CandidateUser) => {
-  const fallbackName = candidate.id.slice(0, 8);
-  const name = candidate.displayName?.trim() || fallbackName;
+  const normalizedDisplayName = candidate.displayName?.trim() ?? '';
+  const nameFromEmailLikeDisplay = normalizedDisplayName.includes('@')
+    ? normalizedDisplayName.split('@')[0]
+    : normalizedDisplayName;
+  const name = nameFromEmailLikeDisplay || '未設定ユーザー';
   return `${name} (${candidate.role})`;
 };
 

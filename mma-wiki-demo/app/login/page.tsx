@@ -95,6 +95,20 @@ export default function LoginPage() {
         }
       }
 
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (user) {
+        await supabase.from("profiles").upsert(
+          {
+            id: user.id,
+            display_name: username.trim().toLowerCase(),
+          },
+          { onConflict: "id" }
+        );
+      }
+
       router.push(redirectPath);
       router.refresh();
     } catch {

@@ -43,6 +43,27 @@ on conflict (id) do update
 set role = excluded.role,
     updated_at = now();
 
+-- 2.5) 表示名を username(a/b/c/d) に同期
+with demo_accounts as (
+  select *
+  from (values
+    ('a', 'a@a.com', '123456aa'),
+    ('b', 'b@a.com', '123456bb'),
+    ('c', 'c@a.com', '123456cc'),
+    ('d', 'd@a.com', '123456dd')
+  ) as t(username, email, password)
+), existing_auth_users as (
+  select u.id, d.username
+  from auth.users u
+  join demo_accounts d on d.email = u.email
+)
+insert into public.profiles (id, display_name)
+select e.id, e.username
+from existing_auth_users e
+on conflict (id) do update
+set display_name = excluded.display_name,
+    updated_at = now();
+
 -- 3) auth.users に未作成のメールを表示（先に Users で作る）
 with demo_accounts as (
   select *
