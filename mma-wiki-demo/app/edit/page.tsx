@@ -778,7 +778,7 @@ export default function EditPage() {
 
         <div className="border border-gray-200 rounded-lg bg-gray-50 p-4">
           <h2 className="text-sm font-semibold text-gray-900 mb-2">プレビュー（Markdown）</h2>
-          <div className="prose prose-sm md:prose-base max-w-none min-h-20 prose-headings:text-gray-900 prose-p:text-gray-800 prose-li:text-gray-800 prose-code:text-gray-800">
+          <div className="min-h-20 text-gray-800 text-sm leading-7 [&_h1]:mt-6 [&_h1]:mb-3 [&_h1]:text-2xl [&_h1]:font-bold [&_h2]:mt-5 [&_h2]:mb-2 [&_h2]:text-xl [&_h2]:font-semibold [&_h3]:mt-4 [&_h3]:mb-2 [&_h3]:text-lg [&_h3]:font-semibold [&_p]:my-3 [&_ul]:my-3 [&_ul]:list-disc [&_ul]:pl-6 [&_ol]:my-3 [&_ol]:list-decimal [&_ol]:pl-6 [&_li]:my-1 [&_blockquote]:my-3 [&_blockquote]:border-l-4 [&_blockquote]:border-gray-300 [&_blockquote]:pl-3 [&_blockquote]:text-gray-600 [&_pre]:my-3 [&_pre]:overflow-x-auto [&_pre]:rounded-md [&_pre]:bg-gray-100 [&_pre]:p-3 [&_code]:rounded-sm [&_code]:bg-gray-100 [&_code]:px-1 [&_a]:text-blue-600 [&_a]:underline">
             {content.trim() ? (
               <ReactMarkdown remarkPlugins={[remarkGfm]}>{content}</ReactMarkdown>
             ) : (
