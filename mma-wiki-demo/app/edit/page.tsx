@@ -3,6 +3,8 @@
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { supabase } from '@/utils/supabase/client';
 
 type CandidateUser = {
@@ -775,9 +777,13 @@ export default function EditPage() {
         </div>
 
         <div className="border border-gray-200 rounded-lg bg-gray-50 p-4">
-          <h2 className="text-sm font-semibold text-gray-900 mb-2">プレビュー（プレーン表示）</h2>
-          <div className="text-sm text-gray-700 whitespace-pre-wrap min-h-20">
-            {content.trim() ? content : '本文を入力するとここに表示されます。'}
+          <h2 className="text-sm font-semibold text-gray-900 mb-2">プレビュー（Markdown）</h2>
+          <div className="prose prose-sm md:prose-base max-w-none min-h-20 prose-headings:text-gray-900 prose-p:text-gray-800 prose-li:text-gray-800 prose-code:text-gray-800">
+            {content.trim() ? (
+              <ReactMarkdown remarkPlugins={[remarkGfm]}>{content}</ReactMarkdown>
+            ) : (
+              <p className="m-0 text-sm text-gray-500">本文を入力するとMarkdownプレビューがここに表示されます。</p>
+            )}
           </div>
         </div>
 
